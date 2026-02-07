@@ -1,55 +1,34 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Prueba Google Sheets</title>
+<style>
+body{font-family:Arial;padding:20px}
+pre{background:#f4f4f4;padding:15px}
+</style>
+</head>
+<body>
+
+<h1>📄 Datos leídos desde Google Sheets</h1>
+<pre id="salida">Cargando...</pre>
+
 <script>
 const sheetId = "1_BTD-7Y4MZpoe9Ttx8i1B-GjfgBiy1USOV9N9rhpEIA";
 const url = https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json;
-
-let frecuencia = {};
 
 fetch(url)
 .then(r => r.text())
 .then(t => {
   const json = JSON.parse(t.substring(47).slice(0, -2));
-
-  if (!json.table.rows.length) {
-    document.getElementById("pronostico").innerText =
-      "❌ No hay datos en Google Sheets";
-    return;
-  }
-
-  json.table.rows.forEach(r => {
-    if (r.c[2] && r.c[2].v) {
-      r.c[2].v.toString().split(" ").forEach(n => {
-        frecuencia[n] = (frecuencia[n] || 0) + 1;
-      });
-    }
-  });
-
-  generar();
+  document.getElementById("salida").textContent =
+    JSON.stringify(json.table.rows, null, 2);
 })
-.catch(() => {
-  document.getElementById("pronostico").innerText =
-    "❌ Error al leer Google Sheets (revisa permisos)";
+.catch(e => {
+  document.getElementById("salida").textContent =
+    "ERROR AL LEER GOOGLE SHEETS";
 });
-
-function generar() {
-  const ordenados = Object.entries(frecuencia)
-    .sort((a, b) => b[1] - a[1])
-    .map(x => x[0]);
-
-  if (!ordenados.length) {
-    document.getElementById("pronostico").innerText =
-      "❌ No se encontraron números válidos";
-    return;
-  }
-
-  let seleccion = [];
-  while (seleccion.length < 50 && ordenados.length) {
-    const i = Math.floor(Math.random() * ordenados.length);
-    if (!seleccion.includes(ordenados[i])) {
-      seleccion.push(ordenados[i]);
-    }
-  }
-
-  document.getElementById("pronostico").innerText =
-    seleccion.sort().join(" ");
-}
 </script>
+
+</body>
+</html>
