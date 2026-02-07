@@ -1,70 +1,76 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Lotomanía – Pronósticos</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f4f6f8;
-      padding: 20px;
-    }
-    h1 {
-      text-align: center;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-      background: white;
-    }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 8px;
-      text-align: center;
-    }
-    th {
-      background: #1976d2;
-      color: white;
-    }
-  </style>
+<meta charset="UTF-8">
+<title>Lotomanía – Pronóstico Automático</title>
+
+<style>
+body{font-family:Arial;background:#f4f6f8;padding:20px}
+h1,h2{text-align:center}
+table{width:100%;border-collapse:collapse;background:#fff}
+th,td{border:1px solid #ccc;padding:6px;text-align:center}
+th{background:#1976d2;color:white}
+#pronostico{
+  margin-top:20px;
+  background:#fff;
+  padding:15px;
+  font-size:18px;
+  text-align:center;
+  border-radius:8px;
+}
+button{
+  padding:10px 20px;
+  font-size:16px;
+  margin:10px auto;
+  display:block;
+  cursor:pointer;
+}
+</style>
 </head>
+
 <body>
 
-<h1>📊 Lotomanía – Resultados y Pronósticos</h1>
+<h1>📊 Lotomanía – Pronóstico Automático</h1>
 
-<table id="tabla">
-  <thead>
-    <tr>
-      <th>Sorteo</th>
-      <th>Fecha</th>
-      <th>Números</th>
-    </tr>
-  </thead>
-  <tbody></tbody>
-</table>
+<h2>🎯 Números sugeridos</h2>
+<div id="pronostico">Cargando...</div>
+<button onclick="generar()">🔄 Generar nuevo pronóstico</button>
 
 <script>
 const sheetId = "1_BTD-7Y4MZpoe9Ttx8i1B-GjfgBiy1USOV9N9rhpEIA";
 const url = https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json;
 
-fetch(url)
-  .then(res => res.text())
-  .then(text => {
-    const json = JSON.parse(text.substring(47).slice(0, -2));
-    const rows = json.table.rows;
-    const tbody = document.querySelector("#tabla tbody");
+let frecuencia = {};
 
-    rows.forEach(r => {
-      const tr = document.createElement("tr");
-      r.c.forEach(c => {
-        const td = document.createElement("td");
-        td.textContent = c ? c.v : "";
-        tr.appendChild(td);
+fetch(url)
+.then(r=>r.text())
+.then(t=>{
+  const json = JSON.parse(t.substring(47).slice(0,-2));
+  json.table.rows.forEach(r=>{
+    if(r.c[2] && r.c[2].v){
+      r.c[2].v.split(" ").forEach(n=>{
+        frecuencia[n]=(frecuencia[n]||0)+1;
       });
-      tbody.appendChild(tr);
-    });
+    }
   });
+  generar();
+});
+
+function generar(){
+  const ordenados = Object.entries(frecuencia)
+    .sort((a,b)=>b[1]-a[1])
+    .map(x=>x[0]);
+
+  let seleccion = [];
+  while(seleccion.length<50 && ordenados.length){
+    const i = Math.floor(Math.random()*Math.min(ordenados.length,70));
+    const n = ordenados[i];
+    if(!seleccion.includes(n)) seleccion.push(n);
+  }
+
+  document.getElementById("pronostico").innerText =
+    seleccion.sort().join(" ");
+}
 </script>
 
 </body>
