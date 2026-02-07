@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Pronósticos Lotomania</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 10px;
+    }
+    th, td {
+      border: 1px solid #444;
+      padding: 6px;
+      text-align: center;
+    }
+    th {
+      background-color: #f0f0f0;
+    }
+  </style>
+</head>
+<body>
+
+<h2>Pronósticos Lotomania</h2>
+<p>Datos cargados automáticamente desde Google Sheets</p>
+
+<table id="tabla">
+  <thead>
+    <tr>
+      <th>Sorteo</th>
+      <th>Fecha</th>
+      <th>Números</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<h3>Números más frecuentes</h3>
+<ul id="frecuencias"></ul>
+
+<script>
+const urlCSV = "https://docs.google.com/spreadsheets/d/1_BTD-7Y4MZpoe9Ttx8i1B-GjfgBiy1USOV9N9rhpEIA/export?format=csv";
+
+fetch(urlCSV)
+  .then(response => response.text())
+  .then(texto => {
+    const filas = texto.trim().split("\n").slice(1);
+    let conteo = {};
+
+    filas.forEach(fila => {
+      const partes = fila.split(",");
+      const sorteo = partes[0];
+      const fecha = partes[1];
+      const numeros = partes.slice(2).join(",");
+
+      document.querySelector("#tabla tbody").innerHTML += `
+        <tr>
+          <td>${sorteo}</td>
+          <td>${fecha}</td>
+          <td>${numeros}</td>
+        </tr>
+      `;
+
+      numeros.replace(/"/g, "").split(",").forEach(n => {
+        conteo[n] = (conteo[n] || 0) + 1;
+      });
+    });
+
+    Object.entries(conteo)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 20)
+      .forEach(([num, veces]) => {
+        document.getElementById("frecuencias").innerHTML +=
+          <li>Número ${num}: ${veces} veces</li>;
+      });
+  })
+  .catch(err => {
+    document.body.innerHTML += "<p>Error cargando datos</p>";
+    console.error(err);
+  });
+</script>
+
+</body>
+</html>
