@@ -2,32 +2,149 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Prueba Google Sheets</title>
+<title>Lotomania Brasil – Pronósticos</title>
+
 <style>
-body{font-family:Arial;padding:20px}
-pre{background:#f4f4f4;padding:15px}
+body{
+  font-family:Arial, sans-serif;
+  background:#f4f6f8;
+  padding:20px;
+}
+h1,h2,h3{
+  text-align:center;
+}
+.section{
+  background:#fff;
+  padding:15px;
+  margin-top:20px;
+  border-radius:8px;
+}
+button{
+  padding:10px 20px;
+  font-size:16px;
+  margin:10px auto;
+  display:block;
+  cursor:pointer;
+}
+.numeros{
+  font-size:18px;
+  text-align:center;
+  line-height:1.6;
+  word-wrap:break-word;
+}
+.jugada{
+  margin-top:10px;
+  padding:8px;
+  background:#eef2f5;
+  border-radius:6px;
+}
+small{
+  color:#555;
+}
 </style>
 </head>
+
 <body>
 
-<h1>📄 Datos leídos desde Google Sheets</h1>
-<pre id="salida">Cargando...</pre>
+<h1>🎯 Lotomania Brasil – Sistema de Pronósticos</h1>
+
+<div class="section">
+<h2>ℹ️ Información Lotomania</h2>
+<ul>
+  <li>Apuesta con <b>50 números</b> del <b>00 al 99</b></li>
+  <li>Premios principales: 20, 19, 18, 17, 16 y 0 aciertos</li>
+  <li>Sorteos realizados por <b>Caixa Econômica Federal</b></li>
+  <li>Juego de probabilidad (análisis estadístico ≠ garantía)</li>
+</ul>
+</div>
+
+<div class="section">
+<h2>📊 50 Números Sugeridos</h2>
+<div id="top50" class="numeros">Cargando datos...</div>
+<button onclick="generarTodo()">🔄 Generar nuevos números</button>
+</div>
+
+<div class="section">
+<h2>🎟️ 20 Jugadas Automáticas</h2>
+<div id="jugadas"></div>
+</div>
+
+<div class="section">
+<h3>📌 Nota</h3>
+<small>
+Los pronósticos se basan en frecuencia histórica de resultados cargados en Google Sheets.
+Este sistema es solo informativo.
+</small>
+</div>
 
 <script>
-const sheetId = "1_BTD-7Y4MZpoe9Ttx8i1B-GjfgBiy1USOV9N9rhpEIA";
-const url = https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json;
+const sheetId = "1NOSXFL_Yzfqy6My8tZSh0Trb1saheQGzHNVpcpVXzoE";
+const url = https://docs.google.com/spreadsheets/d/${sheetId}/pub?output=csv;
+
+let frecuencia = {};
 
 fetch(url)
-.then(r => r.text())
-.then(t => {
-  const json = JSON.parse(t.substring(47).slice(0, -2));
-  document.getElementById("salida").textContent =
-    JSON.stringify(json.table.rows, null, 2);
+.then(r=>r.text())
+.then(csv=>{
+  const filas = csv.split("\n").slice(1);
+
+  filas.forEach(f=>{
+    const cols = f.split(",");
+    if(cols[2]){
+      cols[2].trim().split(" ").forEach(n=>{
+        if(n.length===2){
+          frecuencia[n]=(frecuencia[n]||0)+1;
+        }
+      });
+    }
+  });
+
+  generarTodo();
 })
-.catch(e => {
-  document.getElementById("salida").textContent =
-    "ERROR AL LEER GOOGLE SHEETS";
+.catch(()=>{
+  document.getElementById("top50").innerText =
+    "❌ Error al leer Google Sheets (verifica publicación)";
 });
+
+function generarTodo(){
+  const ordenados = Object.entries(frecuencia)
+    .sort((a,b)=>b[1]-a[1])
+    .map(x=>x[0]);
+
+  if(!ordenados.length){
+    document.getElementById("top50").innerText =
+      "❌ No hay datos válidos";
+    return;
+  }
+
+  // 50 números sugeridos
+  let top50=[];
+  while(top50.length<50){
+    const n = ordenados[Math.floor(Math.random()*ordenados.length)];
+    if(!top50.includes(n)) top50.push(n);
+  }
+  top50.sort();
+
+  document.getElementById("top50").innerText = top50.join(" ");
+
+  // 20 jugadas
+  const jugadasDiv = document.getElementById("jugadas");
+  jugadasDiv.innerHTML = "";
+
+  for(let i=1;i<=20;i++){
+    let jugada=[];
+    while(jugada.length<50){
+      const n = top50[Math.floor(Math.random()*top50.length)];
+      if(!jugada.includes(n)) jugada.push(n);
+    }
+    jugada.sort();
+
+    const div = document.createElement("div");
+    div.className="jugada";
+    div.innerHTML = <b>Jugada ${i}:</b><br>${jugada.join(" ")};
+    jugadasDiv.appendChild(div);
+  }
+}
 </script>
 
 </body>
