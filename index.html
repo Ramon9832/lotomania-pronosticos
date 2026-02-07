@@ -1,30 +1,144 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<title>Prueba Google Sheets</title>
-<style>
-body{font-family:Arial;padding:20px}
-pre{background:#f4f4f4;padding:15px;white-space:pre-wrap}
-</style>
+  <meta charset="UTF-8">
+  <title>Lotomania – Pronóstico Automático</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      margin: 0;
+      padding: 20px;
+    }
+    h1, h2 {
+      text-align: center;
+    }
+    button {
+      padding: 12px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      margin: 10px auto;
+      display: block;
+    }
+    .box {
+      background: #fff;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 15px auto;
+      max-width: 900px;
+    }
+    .numbers {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .num {
+      background: #1976d2;
+      color: #fff;
+      padding: 6px 10px;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    .game {
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+    footer {
+      text-align: center;
+      margin-top: 30px;
+      font-size: 14px;
+      color: #555;
+    }
+  </style>
 </head>
 <body>
 
-<h2>📄 Lectura directa de Google Sheets</h2>
-<pre id="salida">Cargando...</pre>
+<h1>🎯 Lotomania – Pronóstico Automático</h1>
+<p style="text-align:center">
+  Generador basado en estadísticas históricas – Lotomania Brasil
+</p>
+
+<button onclick="generar()">🔄 Generar nuevo pronóstico</button>
+
+<div class="box">
+  <h2>📊 50 números sugeridos</h2>
+  <div id="top50" class="numbers"></div>
+</div>
+
+<div class="box">
+  <h2>🎟️ 20 jugadas automáticas</h2>
+  <div id="jugadas"></div>
+</div>
+
+<div class="box">
+  <h2>ℹ️ Información Lotomania</h2>
+  <ul>
+    <li>🔢 Números del 00 al 99</li>
+    <li>🎯 Se juegan 50 números por boleto</li>
+    <li>🏆 Premios principales: 20, 19, 18, 17, 16, 15, 0 aciertos</li>
+    <li>📅 Sorteos: Lunes, Miércoles y Viernes</li>
+    <li>🇧🇷 Lotería oficial de Ramon el Animal – Brasil</li>
+  </ul>
+</div>
+
+<footer>
+  Proyecto educativo – No garantiza premios
+</footer>
 
 <script>
-const url = "PEGA_AQUI_TU_ENLACE_CSV";
+const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ5zTmvIQ_c4bX9ADf1JzSKvivksl2Mkejdu9cvwrSwjvqB1_f2xSBudShflElF0CBMsJ260c_Beodx/pub?gid=0&single=true&output=csv";
 
-fetch(url)
-  .then(r => r.text())
-  .then(data => {
-    document.getElementById("salida").textContent = data;
-  })
-  .catch(() => {
-    document.getElementById("salida").textContent =
-      "❌ Error leyendo Google Sheets";
+let frecuencias = {};
+
+function cargarDatos() {
+  return fetch(CSV_URL)
+    .then(r => r.text())
+    .then(texto => {
+      frecuencias = {};
+      const filas = texto.trim().split("\n");
+      filas.forEach(fila => {
+        fila.split(",").forEach(n => {
+          const num = n.trim();
+          if (!isNaN(num)) {
+            frecuencias[num] = (frecuencias[num] || 0) + 1;
+          }
+        });
+      });
+    });
+}
+
+function generar() {
+  cargarDatos().then(() => {
+    const ordenados = Object.entries(frecuencias)
+      .sort((a,b) => b[1] - a[1])
+      .map(e => e[0].padStart(2,"0"));
+
+    const top50 = ordenados.slice(0,50);
+
+    const cont50 = document.getElementById("top50");
+    cont50.innerHTML = "";
+    top50.forEach(n => {
+      const d = document.createElement("div");
+      d.className = "num";
+      d.textContent = n;
+      cont50.appendChild(d);
+    });
+
+    const jugadasDiv = document.getElementById("jugadas");
+    jugadasDiv.innerHTML = "";
+
+    for (let i=1; i<=20; i++) {
+      const mezcla = [...top50].sort(() => 0.5 - Math.random()).slice(0,50);
+      const p = document.createElement("div");
+      p.className = "game";
+      p.textContent = "Jugada " + i + ": " + mezcla.join(", ");
+      jugadasDiv.appendChild(p);
+    }
   });
+}
+
+generar();
 </script>
 
 </body>
