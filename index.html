@@ -2,31 +2,36 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Pronósticos Lotomania</title>
+  <title>Lotomanía – Pronósticos</title>
   <style>
     body {
       font-family: Arial, sans-serif;
+      background: #f4f6f8;
       padding: 20px;
     }
+    h1 {
+      text-align: center;
+    }
     table {
-      border-collapse: collapse;
       width: 100%;
-      margin-top: 10px;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background: white;
     }
     th, td {
-      border: 1px solid #444;
-      padding: 6px;
+      border: 1px solid #ccc;
+      padding: 8px;
       text-align: center;
     }
     th {
-      background-color: #f0f0f0;
+      background: #1976d2;
+      color: white;
     }
   </style>
 </head>
 <body>
 
-<h2>Pronósticos Lotomania</h2>
-<p>Datos cargados automáticamente desde Google Sheets</p>
+<h1>📊 Lotomanía – Resultados y Pronósticos</h1>
 
 <table id="tabla">
   <thead>
@@ -39,48 +44,26 @@
   <tbody></tbody>
 </table>
 
-<h3>Números más frecuentes</h3>
-<ul id="frecuencias"></ul>
-
 <script>
-const urlCSV = "https://docs.google.com/spreadsheets/d/1_BTD-7Y4MZpoe9Ttx8i1B-GjfgBiy1USOV9N9rhpEIA/export?format=csv";
+const sheetId = "1_BTD-7Y4MZpoe9Ttx8i1B-GjfgBiy1USOV9N9rhpEIA";
+const url = https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json;
 
-fetch(urlCSV)
-  .then(response => response.text())
-  .then(texto => {
-    const filas = texto.trim().split("\n").slice(1);
-    let conteo = {};
+fetch(url)
+  .then(res => res.text())
+  .then(text => {
+    const json = JSON.parse(text.substring(47).slice(0, -2));
+    const rows = json.table.rows;
+    const tbody = document.querySelector("#tabla tbody");
 
-    filas.forEach(fila => {
-      const partes = fila.split(",");
-      const sorteo = partes[0];
-      const fecha = partes[1];
-      const numeros = partes.slice(2).join(",");
-
-      document.querySelector("#tabla tbody").innerHTML += `
-        <tr>
-          <td>${sorteo}</td>
-          <td>${fecha}</td>
-          <td>${numeros}</td>
-        </tr>
-      `;
-
-      numeros.replace(/"/g, "").split(",").forEach(n => {
-        conteo[n] = (conteo[n] || 0) + 1;
+    rows.forEach(r => {
+      const tr = document.createElement("tr");
+      r.c.forEach(c => {
+        const td = document.createElement("td");
+        td.textContent = c ? c.v : "";
+        tr.appendChild(td);
       });
+      tbody.appendChild(tr);
     });
-
-    Object.entries(conteo)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 20)
-      .forEach(([num, veces]) => {
-        document.getElementById("frecuencias").innerHTML +=
-          <li>Número ${num}: ${veces} veces</li>;
-      });
-  })
-  .catch(err => {
-    document.body.innerHTML += "<p>Error cargando datos</p>";
-    console.error(err);
   });
 </script>
 
