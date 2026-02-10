@@ -1,82 +1,59 @@
 <script>
+    // Tu ID de hoja de cálculo
     const SHEET_ID = '1NOSXFL_Yzfqy6My8tZSh0Trb1saheQGzHNVpcpVXzoE';
 
     async function fetchResults() {
-        const url = https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json;
+        // Añadimos un número aleatorio al final para forzar a Google a darnos datos nuevos cada vez
+        const url = https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&tq&gid=0&refresh=${Math.random()};
         
         try {
             const res = await fetch(url);
             const text = await res.text();
+            
+            // Esta línea es vital: quita el texto de sobra que manda Google
             const jsonString = text.substring(text.indexOf("{"), text.lastIndexOf("}") + 1);
             const json = JSON.parse(jsonString);
             const rows = json.table.rows;
             
             let html = "";
-            // Invertimos para ver los últimos sorteos primero
-            const ultimasFilas = [...rows].reverse().slice(0, 8);
+            // Filtramos filas vacías y tomamos las últimas 10
+            const filasConDatos = rows.filter(row => row.c && row.c[0] && row.c[2]);
+            const ultimasFilas = filasConDatos.reverse().slice(0, 10);
             
             ultimasFilas.forEach(row => {
-                // Ajuste según tus fotos: A=0 (Sorteo), B=1 (Fecha), C=2 (Números)
                 const concurso = row.c[0] ? row.c[0].v : '---';
-                const fecha = row.c[1] ? row.c[1].f || row.c[1].v : '';
-                const numeros = row.c[2] ? row.c[2].v : 'Pendiente';
+                const fecha = row.c[1] ? (row.c[1].f || row.c[1].v) : '';
+                const numeros = row.c[2] ? row.c[2].v : '';
                 
-                if(numeros !== 'Pendiente') {
-                    html += `
-                        <div class="mb-4 p-4 bg-slate-800/60 rounded-2xl border border-slate-700 shadow-lg">
-                            <div class="flex justify-between items-center mb-2">
-                                <span class="text-blue-400 font-black text-sm">SORTEO ${concurso}</span>
-                                <span class="text-slate-500 text-[10px] font-bold">${fecha}</span>
-                            </div>
-                            <p class="text-emerald-400 font-mono text-sm leading-relaxed tracking-wider">
-                                ${numeros.replace(/ /g, '  ')}
-                            </p>
-                        </div>`;
-                }
+                html += `
+                    <div class="mb-4 p-4 bg-slate-800/80 rounded-2xl border border-blue-500/30 shadow-xl">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-blue-400 font-black text-xs uppercase">Concurso ${concurso}</span>
+                            <span class="text-slate-500 text-[10px] font-bold">${fecha}</span>
+                        </div>
+                        <p class="text-emerald-400 font-mono text-sm tracking-widest leading-relaxed">
+                            ${numeros}
+                        </p>
+                    </div>`;
             });
             
-            document.getElementById('sheets-data').innerHTML = html;
+            document.getElementById('sheets-data').innerHTML = html || "<p class='text-center text-slate-500'>No se encontraron datos en las columnas A, B y C.</p>";
         } catch (e) {
+            console.error(e);
             document.getElementById('sheets-data').innerHTML = `
-                <div class="p-4 bg-red-900/20 text-red-400 rounded-xl text-xs border border-red-900/50">
-                    <b>Error de Conexión:</b><br>
-                    1. Ve a tu Excel > Archivo > Compartir > Publicar en la Web.<br>
-                    2. Dale al botón azul "Publicar".
+                <div class="p-4 bg-yellow-900/20 text-yellow-500 rounded-xl text-xs border border-yellow-700/50">
+                    <b>Aviso:</b> No se pudo conectar con la hoja.<br><br>
+                    1. En tu Google Sheets ve a: <b>Archivo > Compartir > Publicar en la Web</b>.<br>
+                    2. Haz clic en el botón <b>Publicar</b>.<br>
+                    3. Asegúrate de que la hoja no sea privada.
                 </div>`;
         }
     }
 
-    // Función para el Pronóstico Inteligente (Basado en tu estructura)
-    function generarPronosticoPro() {
-        const grid = document.getElementById('grid-pronostico');
-        grid.innerHTML = '';
-        
-        // Creamos el volante 10x10
-        for(let i=0; i<100; i++) {
-            const b = document.createElement('div');
-            b.id = ball-${i};
-            b.className = 'ball';
-            b.innerText = i.toString().padStart(2, '0');
-            // Permitir que el usuario edite la jugada tocando los números
-            b.onclick = () => b.classList.toggle('selected');
-            grid.appendChild(b);
-        }
-
-        // Algoritmo de 50 números con balance 25/25
-        let seleccion = [];
-        while(seleccion.length < 50) {
-            let n = Math.floor(Math.random() * 100);
-            if(!seleccion.includes(n)) seleccion.push(n);
-        }
-
-        seleccion.forEach(n => {
-            document.getElementById(ball-${n}).classList.add('selected');
-        });
-    }
-
-    // Inicializar
+    // Inicializar funciones al cargar la página
     window.onload = () => {
         fetchResults();
-        generarPronosticoPro();
+        // Si tienes la función de generar pronóstico, llámala aquí también
+        if(typeof generarPronosticoPro === 'function') generarPronosticoPro();
     };
 </script>
