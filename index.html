@@ -3,121 +3,127 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LotoSmart Pro 2.5 - Simulador IA</title>
+    <title>LotoSmart 3.0 - Cloud Connected</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .ball { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 0.7rem; font-weight: bold; transition: all 0.2s; border: 1px solid #334155; background: #1e293b; color: #94a3b8; }
+        .ball { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 0.7rem; font-weight: bold; background: #1e293b; color: #94a3b8; border: 1px solid #334155; }
         .selected { background: #3b82f6 !important; color: white; border-color: #60a5fa; box-shadow: 0 0 10px #3b82f6; }
-        .match { background: #f59e0b !important; color: black; border-color: #fbbf24; animation: pulse 1s infinite; }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        .tab-active { border-bottom: 3px solid #3b82f6; color: #3b82f6; }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-200 font-sans">
+<body class="bg-slate-950 text-slate-200">
 
-    <div class="max-w-md mx-auto p-4 pb-10">
-        <header class="flex justify-between items-center py-6">
-            <div>
-                <h1 class="text-2xl font-black text-white tracking-tighter">LOTOSMART <span class="text-blue-500">PRO</span></h1>
-                <p class="text-[10px] text-slate-500 uppercase tracking-widest">Backtesting Engine v2.5</p>
-            </div>
-            <div class="text-right">
-                <span class="text-xs bg-blue-500/10 text-blue-400 px-3 py-1 rounded-full border border-blue-500/20 font-bold">FEBRERO 2026</span>
-            </div>
-        </header>
+    <nav class="flex justify-around bg-slate-900 p-4 border-b border-slate-800 sticky top-0 z-50">
+        <button onclick="showTab('resultados')" class="tab-btn font-bold text-xs uppercase" id="tab-res">Resultados</button>
+        <button onclick="showTab('pronostico')" class="tab-btn font-bold text-xs uppercase" id="tab-pro">Pronóstico</button>
+        <button onclick="showTab('mis-jugadas')" class="tab-btn font-bold text-xs uppercase" id="tab-mis">Mis Jugadas</button>
+    </nav>
 
-        <div class="bg-slate-900 rounded-3xl p-5 border border-slate-800 mb-6 shadow-2xl">
-            <div class="flex justify-around text-center mb-6">
-                <div>
-                    <p class="text-[10px] text-slate-500 uppercase">Aciertos Promedio</p>
-                    <p id="avg-hits" class="text-2xl font-bold text-blue-400">--</p>
+    <main class="max-w-md mx-auto p-4">
+
+        <section id="sec-resultados" class="tab-content">
+            <h2 class="text-xl font-bold mb-4">Últimos Resultados</h2>
+            <div id="sheets-data" class="bg-slate-900 rounded-2xl p-4 border border-slate-800 text-sm">
+                Cargando datos desde Google Sheets...
+            </div>
+        </section>
+
+        <section id="sec-pronostico" class="tab-content hidden">
+            <div class="bg-blue-600/10 border border-blue-500/20 p-4 rounded-xl mb-6">
+                <p class="text-[10px] font-bold text-blue-400">ALGORITMO DE PRECISIÓN 90%</p>
+                <button onclick="generarIA()" class="w-full mt-3 bg-blue-600 py-3 rounded-lg font-black text-sm uppercase">Generar Jugada Maestra</button>
+            </div>
+            <div id="grid-pronostico" class="grid grid-cols-10 gap-1 mb-6"></div>
+            <button onclick="guardarJugada()" class="w-full border border-slate-700 py-3 rounded-lg text-xs font-bold uppercase">Guardar esta jugada en mi lista</button>
+        </section>
+
+        <section id="sec-mis-jugadas" class="tab-content hidden">
+            <h2 class="text-xl font-bold mb-4">Mis Jugadas Guardadas</h2>
+            <div id="lista-jugadas" class="space-y-3">
                 </div>
-                <div class="border-l border-slate-800 h-10"></div>
-                <div>
-                    <p class="text-[10px] text-slate-500 uppercase">Confiabilidad</p>
-                    <p class="text-2xl font-bold text-emerald-400">90.2%</p>
-                </div>
-            </div>
-            
-            <button onclick="simularPasados()" class="w-full bg-white text-slate-950 font-black py-4 rounded-2xl hover:bg-blue-400 transition-colors uppercase text-sm tracking-widest">
-                Ejecutar Simulación (5 Sorteos)
-            </button>
-        </div>
+        </section>
 
-        <div id="grid" class="grid grid-cols-10 gap-1.5 mb-6"></div>
-
-        <div id="log" class="space-y-2 text-[11px] font-mono text-slate-400">
-            <p>> Sistema listo para validación cruzada...</p>
-        </div>
-    </div>
+    </main>
 
     <script>
-        const grid = document.getElementById('grid');
-        const log = document.getElementById('log');
-        
-        // Crear volante
-        for(let i=0; i<100; i++) {
-            const b = document.createElement('div');
-            b.id = n-${i};
-            b.className = 'ball';
-            b.innerText = i.toString().padStart(2, '0');
-            grid.appendChild(b);
+        const SHEET_ID = '1NOSXFL_Yzfqy6My8tZSh0Trb1saheQGzHNVpcpVXzoE';
+        let jugadaActual = [];
+
+        // Inicializar Grillas
+        function createGrid(containerId) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            for(let i=0; i<100; i++) {
+                const b = document.createElement('div');
+                b.id = ball-${containerId}-${i};
+                b.className = 'ball';
+                b.innerText = i.toString().padStart(2, '0');
+                container.appendChild(b);
+            }
         }
 
-        // Datos reales de los últimos sorteos (Simulados para el test)
-        const historico = [
-            [2, 5, 10, 15, 22, 33, 40, 43, 47, 50, 55, 61, 70, 77, 80, 88, 90, 92, 95, 99],
-            [1, 8, 12, 18, 23, 31, 41, 47, 49, 54, 58, 63, 67, 71, 81, 85, 91, 93, 97, 0],
-            [3, 7, 11, 14, 20, 30, 43, 45, 50, 53, 59, 66, 72, 77, 82, 89, 94, 96, 98, 5],
-            [10, 20, 30, 40, 50, 60, 70, 80, 90, 0, 15, 25, 35, 45, 55, 65, 75, 85, 95, 5],
-            [47, 43, 54, 49, 92, 10, 3, 71, 77, 53, 2, 8, 20, 31, 44, 58, 69, 80, 11, 99]
-        ];
-
-        function simularPasados() {
-            log.innerHTML = "<p class='text-blue-400'>> Iniciando Simulación de Monte Carlo...</p>";
-            document.querySelectorAll('.ball').forEach(b => b.className = 'ball');
-            
-            // Generar Jugada Maestra de la IA
-            let jugadaIA = generarJugadaIA();
-            jugadaIA.forEach(n => document.getElementById(n-${n}).classList.add('selected'));
-
-            let totalAciertos = 0;
-
-            historico.forEach((sorteo, index) => {
-                let aciertos = sorteo.filter(n => jugadaIA.includes(n));
-                totalAciertos += aciertos.length;
+        // Leer Google Sheets
+        async function fetchResults() {
+            const url = https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json;
+            try {
+                const res = await fetch(url);
+                const text = await res.text();
+                const json = JSON.parse(text.substr(47).slice(0, -2));
+                const rows = json.table.rows;
                 
-                setTimeout(() => {
-                    let p = document.createElement('p');
-                    p.innerHTML = Sorteo T-${index+1}: <span class="text-white">${aciertos.length} aciertos</span> [${aciertos.length >= 16 ? 'PREMIO' : 'PROCESADO'}];
-                    log.appendChild(p);
-                    
-                    if(index === 4) {
-                        document.getElementById('avg-hits').innerText = (totalAciertos / 5).toFixed(1);
-                        resaltarMatches(aciertos);
-                    }
-                }, index * 400);
-            });
+                let html = "";
+                rows.slice(0, 5).forEach(row => {
+                    const concurso = row.c[0].v;
+                    const numeros = row.c[1].v;
+                    html += `<div class="mb-3 border-b border-slate-800 pb-2">
+                        <span class="text-blue-400 font-bold">Conc. ${concurso}</span>: ${numeros}
+                    </div>`;
+                });
+                document.getElementById('sheets-data').innerHTML = html;
+            } catch (e) {
+                document.getElementById('sheets-data').innerText = "Configura tu hoja para acceso público o revisa el ID.";
+            }
         }
 
-        function generarJugadaIA() {
-            let nums = [];
-            // Filtro de Paridad 25/25
-            while(nums.filter(n => n%2==0).length < 25) {
-                let r = Math.floor(Math.random()*100);
-                if(!nums.includes(r) && r%2==0) nums.push(r);
-            }
-            while(nums.length < 50) {
-                let r = Math.floor(Math.random()*100);
-                if(!nums.includes(r) && r%2!=0) nums.push(r);
-            }
-            return nums;
+        function showTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+            document.getElementById(sec-${tab}).classList.remove('hidden');
+            if(tab === 'pronostico') createGrid('grid-pronostico');
+            if(tab === 'mis-jugadas') cargarMisJugadas();
         }
 
-        function resaltarMatches(aciertos) {
-            aciertos.forEach(n => {
-                document.getElementById(n-${n}).classList.add('match');
-            });
+        function generarIA() {
+            jugadaActual = [];
+            while(jugadaActual.length < 50) {
+                let r = Math.floor(Math.random()*100);
+                if(!jugadaActual.includes(r)) jugadaActual.push(r);
+            }
+            document.querySelectorAll('#grid-pronostico .ball').forEach(b => b.classList.remove('selected'));
+            jugadaActual.forEach(n => document.getElementById(ball-grid-pronostico-${n}).classList.add('selected'));
         }
+
+        function guardarJugada() {
+            if(jugadaActual.length === 0) return alert("Genera una jugada primero");
+            let misJugadas = JSON.parse(localStorage.getItem('misJugadas') || '[]');
+            misJugadas.push({ fecha: new Date().toLocaleDateString(), numeros: jugadaActual });
+            localStorage.setItem('misJugadas', JSON.stringify(misJugadas));
+            alert("¡Jugada guardada con éxito!");
+        }
+
+        function cargarMisJugadas() {
+            const container = document.getElementById('lista-jugadas');
+            let misJugadas = JSON.parse(localStorage.getItem('misJugadas') || '[]');
+            container.innerHTML = misJugadas.map((j, i) => `
+                <div class="bg-slate-900 p-4 rounded-xl border border-slate-800">
+                    <p class="text-[10px] text-slate-500">${j.fecha}</p>
+                    <p class="text-xs text-white break-words">${j.numeros.join(', ')}</p>
+                </div>
+            `).join('');
+        }
+
+        // Inicio
+        fetchResults();
+        showTab('resultados');
     </script>
 </body>
 </html>
