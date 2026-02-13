@@ -2,120 +2,139 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Lotomania PRO – Pronóstico Inteligente</title>
+<title>Lotomania PRO – Filtro 20 Puntos</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-body{font-family:Arial;background:#eef2f5;padding:20px}
-h1,h2{text-align:center}
-.box{background:#fff;padding:15px;border-radius:8px;margin:15px auto;max-width:950px}
-.num{background:#2e7d32;color:#fff;padding:5px 8px;border-radius:4px;font-size:13px}
-.numbers{display:flex;flex-wrap:wrap;gap:5px}
-button,select{padding:10px;font-size:16px;margin:10px auto;display:block}
-.game{margin-bottom:12px;font-weight:bold}
+body{font-family:'Segoe UI',Arial;background:#f0f4f7;padding:20px;color:#333}
+h1{text-align:center;color:#1b5e20}
+.box{background:#fff;padding:15px;border-radius:12px;margin:10px auto;max-width:900px;box-shadow:0 4px 6px rgba(0,0,0,0.1)}
+.num{background:#2e7d32;color:#fff;padding:4px 6px;border-radius:4px;font-size:12px;min-width:22px;text-align:center}
+.numbers{display:flex;flex-wrap:wrap;gap:4px;justify-content:center}
+button{padding:12px 20px;font-size:16px;margin:10px auto;display:inline-block;cursor:pointer;border-radius:8px;border:none;background:#1b5e20;color:white;transition:0.3s}
+button:hover{background:#2e7d32}
+.btn-save{background:#0277bd;margin-left:10px}
+.game{margin-bottom:10px;font-family:monospace;font-size:14px;background:#f9f9f9;padding:8px;border-left:4px solid #2e7d32}
+.controls{text-align:center}
 </style>
 </head>
 
 <body>
 
-<h1>🎯 Lotomania PRO</h1>
-<p style="text-align:center">Pronóstico estadístico avanzado – Brasil</p>
+<h1>🎯 Lotomania PRO: Filtro de Cuadrantes</h1>
 
 <div class="box">
-<p><b>📅 Último sorteo:</b> <span id="fecha">—</span></p>
-<p><b>📊 Sorteos analizados:</b> <span id="total">0</span></p>
-<p><b>🧠 Método:</b> Frecuencia + Decenas + Filtro caliente/frío</p>
+    <p><b>📊 Estado:</b> <span id="fecha">Sincronizando...</span> | <b>Sorteos:</b> <span id="total">0</span></p>
+</div>
+
+<div class="box controls">
+    <label>Cantidad de jugadas:</label>
+    <select id="cantidad">
+        <option>5</option><option>10</option><option>20</option>
+    </select>
+    <button onclick="generar()">🔄 Generar y Filtrar</button>
+    <button class="btn-save" onclick="descargarTXT()">💾 Guardar TXT</button>
 </div>
 
 <div class="box">
-<label>🎟️ Cantidad de jugadas:</label>
-<select id="cantidad">
-<option>1</option><option>5</option><option>10</option><option>15</option><option>20</option>
-</select>
-<button onclick="generar()">🔄 Generar pronóstico PRO</button>
-</div>
-
-<div class="box">
-<h2>🔥 Números más fuertes (Top 50)</h2>
-<div id="top50" class="numbers"></div>
-</div>
-
-<div class="box">
-<h2>🎟️ Jugadas sugeridas</h2>
-<div id="jugadas"></div>
+    <h2>🎟️ Jugadas de Alta Probabilidad</h2>
+    <div id="jugadas"></div>
 </div>
 
 <script>
 const CSV="https://docs.google.com/spreadsheets/d/e/2PACX-1vQ5zTmvIQ_c4bX9ADf1JzSKvivksl2Mkejdu9cvwrSwjvqB1_f2xSBudShflElF0CBMsJ260c_Beodx/pub?gid=0&single=true&output=csv";
 let freq={};
+let jugadasFinales = [];
 
 async function cargar(){
-freq={};
-let r=await fetch(CSV);
-let t=await r.text();
-let rows=t.trim().split("\n");
-
-document.getElementById("total").textContent=rows.length;
-document.getElementById("fecha").textContent=rows[0].split(",")[1];
-
-rows.forEach(l=>{
-let c=l.split(",");
-if(!c[2]) return;
-c[2].split(" ").forEach(n=>{
-n=n.padStart(2,"0");
-freq[n]=(freq[n]||0)+1;
-});
-});
+    freq={};
+    try {
+        let r=await fetch(CSV);
+        let t=await r.text();
+        let rows=t.trim().split("\n");
+        document.getElementById("total").textContent=rows.length;
+        document.getElementById("fecha").textContent="Último: " + (rows[0].split(",")[1] || "Hoy");
+        for(let i=0; i<100; i++) freq[i.toString().padStart(2,"0")] = 0;
+        rows.forEach(l=>{
+            let c=l.split(",");
+            if(!c[2]) return;
+            c[2].split(" ").forEach(n=>{
+                n=n.padStart(2,"0");
+                if(freq[n] !== undefined) freq[n]++;
+            });
+        });
+    } catch(e) { alert("Error al conectar con la base de datos."); }
 }
 
-function balancear(top){
-let decenas=[[],[],[],[],[],[],[],[],[],[]];
-top.forEach(n=>{
-decenas[Math.floor(n/10)].push(n);
-});
-let res=[];
-decenas.forEach(d=>{
-res.push(...d.slice(0,5)); // máx 5 por decena
-});
-return res.slice(0,50);
+function esValida(jugada) {
+    // 1. Filtro Par/Impar (22 a 28)
+    let pares = jugada.filter(n => parseInt(n) % 2 === 0).length;
+    if (pares < 22 || pares > 28) return false;
+
+    // 2. Filtro de Cuadrantes (Mínimo 8 números por cuadrante para evitar vacíos)
+    let c1=0, c2=0, c3=0, c4=0;
+    jugada.forEach(n => {
+        let num = parseInt(n);
+        let fila = Math.floor(num/10);
+        let col = num % 10;
+        if(fila < 5 && col < 5) c1++;
+        else if(fila < 5 && col >= 5) c2++;
+        else if(fila >= 5 && col < 5) c3++;
+        else c4++;
+    });
+    if([c1,c2,c3,c4].some(c => c < 8 || c > 18)) return false;
+
+    return true;
 }
 
 async function generar(){
-await cargar();
+    await cargar();
+    jugadasFinales = [];
+    let base80 = [];
+    for(let d=0; d<10; d++) { for(let n=2; n<=9; n++) { base80.push((d*10 + n).toString().padStart(2,"0")); } }
 
-let orden=Object.keys(freq).sort((a,b)=>freq[b]-freq[a]);
-let calientes=orden.slice(0,60);
-let frios=orden.slice(60,100);
+    let restantes = [];
+    for(let i=0; i<100; i++){
+        let n = i.toString().padStart(2,"0");
+        if(!base80.includes(n)) restantes.push(n);
+    }
+    restantes.sort((a,b) => freq[b] - freq[a]);
+    let universo = [...base80, ...restantes.slice(0, 5)];
 
-let seleccion=[
-...calientes.slice(0,35),
-...frios.slice(0,15)
-];
+    let cant = parseInt(document.getElementById("cantidad").value);
+    let jDiv = document.getElementById("jugadas");
+    jDiv.innerHTML = "<p>Filtrando combinaciones óptimas...</p>";
 
-seleccion=balancear(seleccion);
+    let intentos = 0;
+    while(jugadasFinales.length < cant && intentos < 2000){
+        let combo = [...universo].sort(()=>0.5-Math.random()).slice(0, 50).sort((a,b)=>a-b);
+        if(esValida(combo)){
+            jugadasFinales.push(combo);
+        }
+        intentos++;
+    }
 
-let top=document.getElementById("top50");
-top.innerHTML="";
-seleccion.forEach(n=>{
-let d=document.createElement("div");
-d.className="num";
-d.textContent=n;
-top.appendChild(d);
-});
-
-let cant=parseInt(document.getElementById("cantidad").value);
-let j=document.getElementById("jugadas");
-j.innerHTML="";
-
-for(let i=1;i<=cant;i++){
-let mix=[...seleccion].sort(()=>0.5-Math.random());
-let g=document.createElement("div");
-g.className="game";
-g.textContent="Jugada "+i+": "+mix.join(", ");
-j.appendChild(g);
+    jDiv.innerHTML = "";
+    jugadasFinales.forEach((jg, index) => {
+        let g = document.createElement("div");
+        g.className = "game";
+        g.innerHTML = <strong>Juego ${index+1}:</strong> ${jg.join(" ")};
+        jDiv.appendChild(g);
+    });
 }
-}
 
-generar();
+function descargarTXT() {
+    if(jugadasFinales.length === 0) return alert("Primero genera las jugadas");
+    let contenido = "MIS JUGADAS LOTOMANIA\n" + "====================\n";
+    jugadasFinales.forEach((jg, i) => {
+        contenido += Jugada ${i+1}: ${jg.join(" ")}\n;
+    });
+    const blob = new Blob([contenido], {type: 'text/plain'});
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'lotomania_pro.txt';
+    a.click();
+}
 </script>
 
 </body>
