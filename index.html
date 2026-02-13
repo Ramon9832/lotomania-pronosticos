@@ -1,19 +1,16 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>PRUEBA</title>
-</head>
-<body>
-
-<h1>SI VES ESTO, GITHUB FUNCIONA</h1>
-
 <script>
-document.body.insertAdjacentHTML(
-  "beforeend",
-  "<p style='color:green;font-size:20px'>JavaScript ejecutándose OK</p>"
-);
-</script>
+const top50=document.getElementById("top50");
+const jugadas=document.getElementById("jugadas");
 
-</body>
-</html>
+if(!top50 || !jugadas){
+  document.body.innerHTML="<h2>Error: contenedores no encontrados</h2>";
+}else{
+  for(let i=0;i<50;i++){
+    let d=document.createElement("div");
+    d.className="num";
+    d.textContent=i.toString().padStart(2,"0");
+    top50.appendChild(d);
+  }
+  jugadas.innerHTML="<div class='game'>Sistema visual confirmado</div>";
+}
+</script>
