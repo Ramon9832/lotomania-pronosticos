@@ -2,121 +2,25 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Lotomania PRO – Pronóstico Inteligente</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<style>
-body{font-family:Arial;background:#eef2f5;padding:20px}
-h1,h2{text-align:center}
-.box{background:#fff;padding:15px;border-radius:8px;margin:15px auto;max-width:950px}
-.num{background:#2e7d32;color:#fff;padding:5px 8px;border-radius:4px;font-size:13px}
-.numbers{display:flex;flex-wrap:wrap;gap:5px}
-button,select{padding:10px;font-size:16px;margin:10px auto;display:block}
-.game{margin-bottom:12px;font-weight:bold}
-</style>
+<title>Lotomania – Pronóstico Profesional</title>
+<link rel="stylesheet" href="style.css">
 </head>
 
 <body>
+<h1>Lotomania – Pronóstico Automático</h1>
 
-<h1>🎯 Lotomania PRO</h1>
-<p style="text-align:center">Pronóstico estadístico avanzado – Brasil</p>
+<p id="info">Cargando último sorteo...</p>
 
-<div class="box">
-<p><b>📅 Último sorteo:</b> <span id="fecha">—</span></p>
-<p><b>📊 Sorteos analizados:</b> <span id="total">0</span></p>
-<p><b>🧠 Método:</b> Frecuencia + Decenas + Filtro caliente/frío</p>
-</div>
+<label>
+Cantidad de jugadas (1–20):
+<input type="number" id="cantidad" value="5" min="1" max="20">
+</label>
 
-<div class="box">
-<label>🎟️ Cantidad de jugadas:</label>
-<select id="cantidad">
-<option>1</option><option>5</option><option>10</option><option>15</option><option>20</option>
-</select>
-<button onclick="generar()">🔄 Generar pronóstico PRO</button>
-</div>
+<br><br>
+<button onclick="generar()">Generar jugadas</button>
 
-<div class="box">
-<h2>🔥 Números más fuertes (Top 50)</h2>
-<div id="top50" class="numbers"></div>
-</div>
-
-<div class="box">
-<h2>🎟️ Jugadas sugeridas</h2>
 <div id="jugadas"></div>
-</div>
 
-<script>
-const CSV="https://docs.google.com/spreadsheets/d/e/2PACX-1vQ5zTmvIQ_c4bX9ADf1JzSKvivksl2Mkejdu9cvwrSwjvqB1_f2xSBudShflElF0CBMsJ260c_Beodx/pub?gid=0&single=true&output=csv";
-let freq={};
-
-async function cargar(){
-freq={};
-let r=await fetch(CSV);
-let t=await r.text();
-let rows=t.trim().split("\n");
-
-document.getElementById("total").textContent=rows.length;
-document.getElementById("fecha").textContent=rows[0].split(",")[1];
-
-rows.forEach(l=>{
-let c=l.split(",");
-if(!c[2]) return;
-c[2].split(" ").forEach(n=>{
-n=n.padStart(2,"0");
-freq[n]=(freq[n]||0)+1;
-});
-});
-}
-
-function balancear(top){
-let decenas=[[],[],[],[],[],[],[],[],[],[]];
-top.forEach(n=>{
-decenas[Math.floor(n/10)].push(n);
-});
-let res=[];
-decenas.forEach(d=>{
-res.push(...d.slice(0,5)); // máx 5 por decena
-});
-return res.slice(0,50);
-}
-
-async function generar(){
-await cargar();
-
-let orden=Object.keys(freq).sort((a,b)=>freq[b]-freq[a]);
-let calientes=orden.slice(0,60);
-let frios=orden.slice(60,100);
-
-let seleccion=[
-...calientes.slice(0,35),
-...frios.slice(0,15)
-];
-
-seleccion=balancear(seleccion);
-
-let top=document.getElementById("top50");
-top.innerHTML="";
-seleccion.forEach(n=>{
-let d=document.createElement("div");
-d.className="num";
-d.textContent=n;
-top.appendChild(d);
-});
-
-let cant=parseInt(document.getElementById("cantidad").value);
-let j=document.getElementById("jugadas");
-j.innerHTML="";
-
-for(let i=1;i<=cant;i++){
-let mix=[...seleccion].sort(()=>0.5-Math.random());
-let g=document.createElement("div");
-g.className="game";
-g.textContent="Jugada "+i+": "+mix.join(", ");
-j.appendChild(g);
-}
-}
-
-generar();
-</script>
-
+<script src="app.js"></script>
 </body>
 </html>
