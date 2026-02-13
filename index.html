@@ -1,132 +1,89 @@
 <script>
 const CSV="https://docs.google.com/spreadsheets/d/e/2PACX-1vQ5zTmvIQ_c4bX9ADf1JzSKvivksl2Mkejdu9cvwrSwjvqB1_f2xSBudShflElF0CBMsJ260c_Beodx/pub?gid=0&single=true&output=csv";
 
-let sorteos=[];
-let freq={};
-let peso={};
+let freq = {};
+let porDecena = Array.from({length:10},()=>[]);
 
 async function cargar(){
-  sorteos=[];
   freq={};
-  peso={};
+  porDecena = Array.from({length:10},()=>[]);
 
-  let r=await fetch(CSV);
-  let t=await r.text();
-  let rows=t.trim().split("\n");
+  let r = await fetch(CSV);
+  let t = await r.text();
+  let rows = t.trim().split("\n");
 
-  document.getElementById("total").textContent=rows.length;
-  document.getElementById("fecha").textContent=rows[0].split(",")[1];
+  document.getElementById("total").textContent = rows.length;
+  document.getElementById("fecha").textContent = rows[0].split(",")[1] || "—";
 
-  rows.forEach((l,i)=>{
+  rows.forEach(l=>{
     let c=l.split(",");
     if(!c[2]) return;
 
-    let nums=c[2].trim().split(/\s+/);
-    sorteos.push(nums);
-
-    let factor = rows.length - i; // recencia
-
-    nums.forEach(n=>{
+    c[2].split(" ").forEach(n=>{
       n=n.padStart(2,"0");
       freq[n]=(freq[n]||0)+1;
-      peso[n]=(peso[n]||0)+factor;
+      let d=Math.floor(parseInt(n)/10);
+      if(!porDecena[d].includes(n)) porDecena[d].push(n);
     });
   });
+
+  // quedarse con los últimos 8 de cada decena
+  porDecena = porDecena.map(d => d.slice(-8));
 }
 
-// 🔹 últimos 8 por decena
-function ultimos8PorDecena(){
-  let dec=[...Array(10)].map(()=>[]);
-  for(let s of sorteos){
-    s.forEach(n=>{
-      let d=Math.floor(n/10);
-      if(!dec[d].includes(n) && dec[d].length<8){
-        dec[d].push(n);
-      }
-    });
-    if(dec.every(x=>x.length===8)) break;
+function obtenerTop50(){
+  let base=[];
+
+  // 8 por decena = 80 candidatos
+  porDecena.forEach(d => base.push(...d));
+
+  // ordenar por frecuencia
+  base.sort((a,b)=>(freq[b]||0)-(freq[a]||0));
+
+  // asegurar 50 exactos
+  return base.slice(0,50);
+}
+
+function generarJugadas(base, cantidad){
+  let usadas=new Set();
+  let jugadas=[];
+
+  while(jugadas.length<cantidad){
+    let mix=[...base].sort(()=>Math.random()-0.5).slice(0,50);
+    let key=mix.join("-");
+    if(!usadas.has(key)){
+      usadas.add(key);
+      jugadas.push(mix);
+    }
   }
-  return dec.flat();
+  return jugadas;
 }
 
-// 🔹 top ponderados
-function topPonderados(n=20){
-  return Object.keys(peso)
-    .sort((a,b)=>(peso[b]/freq[b])-(peso[a]/freq[a]))
-    .slice(0,n);
-}
-
-// 🔹 armar base de 50
-function base50(){
-  let base=new Set();
-
-  // 1️⃣ últimos 8 por decena → 80 posibles
-  let u8=ultimos8PorDecena();
-  u8.forEach(n=>{
-    if(base.size<40) base.add(n);
-  });
-
-  // 2️⃣ al menos 5 top fuertes
-  let top=topPonderados(20);
-  top.slice(0,5).forEach(n=>base.add(n));
-
-  // 3️⃣ completar con top restantes
-  for(let n of top){
-    if(base.size<50) base.add(n);
-  }
-
-  // 4️⃣ ajuste final
-  let i=0;
-  while(base.size<50 && i<100){
-    base.add(String(i).padStart(2,"0"));
-    i++;
-  }
-
-  return [...base].slice(0,50);
-}
-
-// 🔹 generar jugadas únicas
 async function generar(){
   await cargar();
 
-  let base=base50();
+  let top50 = obtenerTop50();
 
-  let top50=document.getElementById("top50");
-  top50.innerHTML="";
-  base.forEach(n=>{
+  let top=document.getElementById("top50");
+  top.innerHTML="";
+  top50.forEach(n=>{
     let d=document.createElement("div");
     d.className="num";
     d.textContent=n;
-    top50.appendChild(d);
+    top.appendChild(d);
   });
 
   let cant=parseInt(document.getElementById("cantidad").value);
-  let cont=document.getElementById("jugadas");
-  cont.innerHTML="";
+  let jugadas=generarJugadas(top50,cant);
 
-  let firmas=new Set();
-
-  for(let i=1;i<=cant;i++){
-    let jugada;
-    let intentos=0;
-
-    do{
-      jugada=[...base]
-        .sort(()=>0.5-Math.random())
-        .map((n,idx)=>idx%7===0 ? topPonderados(20)[idx%20] : n)
-        .slice(0,50)
-        .sort();
-
-      intentos++;
-    }while(firmas.has(jugada.join("-")) && intentos<20);
-
-    firmas.add(jugada.join("-"));
-
-    let g=document.createElement("div");
-    g.className="game";
-    g.textContent="Jugada "+i+": "+jugada.join(", ");
-    cont.appendChild(g);
-  }
+  let j=document.getElementById("jugadas");
+  j.innerHTML="";
+  jugadas.forEach((g,i)=>{
+    let div=document.createElement("div");
+    div.className="game";
+    div.textContent="Jugada "+(i+1)+": "+g.join(", ");
+    j.appendChild(div);
+  });
 }
 
 generar();
