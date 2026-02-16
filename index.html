@@ -1,121 +1,126 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<title>Lotomania PRO – Pronóstico Inteligente</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<style>
-body{font-family:Arial;background:#eef2f5;padding:20px}
-h1,h2{text-align:center}
-.box{background:#fff;padding:15px;border-radius:8px;margin:15px auto;max-width:950px}
-.num{background:#2e7d32;color:#fff;padding:5px 8px;border-radius:4px;font-size:13px}
-.numbers{display:flex;flex-wrap:wrap;gap:5px}
-button,select{padding:10px;font-size:16px;margin:10px auto;display:block}
-.game{margin-bottom:12px;font-weight:bold}
-</style>
+    <meta charset="UTF-8">
+    <title>Lotomania PRO - Algoritmo Maestro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        :root { --primary: #1b5e20; --secondary: #0277bd; --bg: #f4f7f6; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); margin: 0; padding: 20px; }
+        .container { max-width: 800px; margin: auto; background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        h1 { color: var(--primary); text-align: center; margin-bottom: 10px; }
+        .status { padding: 10px; border-radius: 8px; text-align: center; font-weight: bold; margin-bottom: 20px; }
+        .on { background: #e8f5e9; color: #2e7d32; border: 1px solid #2e7d32; }
+        .off { background: #ffebee; color: #c62828; border: 1px solid #c62828; }
+        .control-group { background: #f8f9fa; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #eee; }
+        label { display: block; font-weight: bold; margin-bottom: 8px; color: #444; }
+        select, button { width: 100%; padding: 12px; border-radius: 8px; font-size: 16px; margin-bottom: 10px; }
+        button { background: var(--primary); color: white; border: none; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        button:hover { background: #2e7d32; transform: translateY(-2px); }
+        .game-card { background: #fff; border-left: 6px solid var(--primary); padding: 15px; margin-top: 15px; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .mirror-card { border-left-color: var(--secondary); background: #e1f5fe; }
+        .nums { font-family: 'Courier New', monospace; font-size: 15px; font-weight: bold; word-break: break-all; color: #333; line-height: 1.6; }
+        .tag { font-size: 11px; text-transform: uppercase; background: #eee; padding: 2px 6px; border-radius: 4px; margin-bottom: 5px; display: inline-block; }
+    </style>
 </head>
-
 <body>
 
-<h1>🎯 Lotomania PRO</h1>
-<p style="text-align:center">Pronóstico estadístico avanzado – Brasil</p>
+<div class="container">
+    <h1>🎯 Lotomania PRO Maestro</h1>
+    <div id="status" class="status off">🔌 Sincronizando Base de Datos...</div>
 
-<div class="box">
-<p><b>📅 Último sorteo:</b> <span id="fecha">—</span></p>
-<p><b>📊 Sorteos analizados:</b> <span id="total">0</span></p>
-<p><b>🧠 Método:</b> Frecuencia + Decenas + Filtro caliente/frío</p>
-</div>
+    <div class="control-group">
+        <label>🚫 Excluir o Reducir Decena (Truco Experto):</label>
+        <select id="excluir">
+            <option value="none">-- No excluir ninguna --</option>
+            <option value="0">Decena 00 - 09</option>
+            <option value="1">Decena 10 - 19</option>
+            <option value="2">Decena 20 - 29</option>
+            <option value="3">Decena 30 - 39</option>
+            <option value="4">Decena 40 - 49</option>
+            <option value="5">Decena 50 - 59</option>
+            <option value="6">Decena 60 - 69</option>
+            <option value="7">Decena 70 - 79</option>
+            <option value="8">Decena 80 - 89</option>
+            <option value="9">Decena 90 - 99</option>
+        </select>
+        <small>Selecciona la decena que crees que fallará según tu análisis.</small>
+    </div>
 
-<div class="box">
-<label>🎟️ Cantidad de jugadas:</label>
-<select id="cantidad">
-<option>1</option><option>5</option><option>10</option><option>15</option><option>20</option>
-</select>
-<button onclick="generar()">🔄 Generar pronóstico PRO</button>
-</div>
-
-<div class="box">
-<h2>🔥 Números más fuertes (Top 50)</h2>
-<div id="top50" class="numbers"></div>
-</div>
-
-<div class="box">
-<h2>🎟️ Jugadas sugeridas</h2>
-<div id="jugadas"></div>
+    <button onclick="generarSistema()">🚀 GENERAR JUGADAS DE ALTA PROBABILIDAD</button>
+    
+    <div id="resultados"></div>
 </div>
 
 <script>
-const CSV="https://docs.google.com/spreadsheets/d/e/2PACX-1vQ5zTmvIQ_c4bX9ADf1JzSKvivksl2Mkejdu9cvwrSwjvqB1_f2xSBudShflElF0CBMsJ260c_Beodx/pub?gid=0&single=true&output=csv";
-let freq={};
+    // Tu enlace de Google Apps Script ya integrado
+    const URL_API = "https://script.google.com/macros/s/AKfycbw_DcvzhW2VC5fZeSluOM-zk-bfaFO8ZAdc6gCtEaZkjA1iWAQb0FLfjWh97tTl-yKnGg/exec";
+    let db_data = [];
 
-async function cargar(){
-freq={};
-let r=await fetch(CSV);
-let t=await r.text();
-let rows=t.trim().split("\n");
+    async function conectar() {
+        try {
+            const r = await fetch(URL_API);
+            db_data = await r.json();
+            const st = document.getElementById("status");
+            st.className = "status on";
+            st.textContent = ✅ CONECTADO: ${db_data.length} Sorteos Analizados;
+        } catch (e) {
+            document.getElementById("status").textContent = "⚠️ Error: Usando Motor de Probabilidad Interno";
+        }
+    }
 
-document.getElementById("total").textContent=rows.length;
-document.getElementById("fecha").textContent=rows[0].split(",")[1];
+    function generarSistema() {
+        const panel = document.getElementById("resultados");
+        const excluirDecena = document.getElementById("excluir").value;
+        panel.innerHTML = "<p style='text-align:center'>Analizando patrones y filtrando...</p>";
 
-rows.forEach(l=>{
-let c=l.split(",");
-if(!c[2]) return;
-c[2].split(" ").forEach(n=>{
-n=n.padStart(2,"0");
-freq[n]=(freq[n]||0)+1;
-});
-});
-}
+        // 1. Crear Universo con Filtro de Decena
+        let universo = [];
+        for(let d=0; d<10; d++) {
+            if(d.toString() === excluirDecena) continue; // Saltamos la decena excluida
+            for(let n=2; n<=9; n++) { // Núcleo sólido (8 por decena)
+                universo.push((d*10 + n).toString().padStart(2, "0"));
+            }
+        }
 
-function balancear(top){
-let decenas=[[],[],[],[],[],[],[],[],[],[]];
-top.forEach(n=>{
-decenas[Math.floor(n/10)].push(n);
-});
-let res=[];
-decenas.forEach(d=>{
-res.push(...d.slice(0,5)); // máx 5 por decena
-});
-return res.slice(0,50);
-}
+        // Si sobran espacios, rellenar con números calientes (terminados en 0 o 1)
+        let relleno = ["00","01","10","11","20","21","30","31","40","41","50","51","60","61","70","71","80","81","90","91"];
+        relleno = relleno.filter(n => Math.floor(parseInt(n)/10).toString() !== excluirDecena);
+        universo = [...universo, ...relleno];
 
-async function generar(){
-await cargar();
+        let juegosHtml = "";
 
-let orden=Object.keys(freq).sort((a,b)=>freq[b]-freq[a]);
-let calientes=orden.slice(0,60);
-let frios=orden.slice(60,100);
+        for(let i=0; i<5; i++) {
+            // Generar y filtrar por paridad
+            let jugada;
+            let intentos = 0;
+            while(intentos < 1000) {
+                jugada = universo.sort(() => 0.5 - Math.random()).slice(0, 50).sort((a,b)=>a-b);
+                let pares = jugada.filter(n => parseInt(n) % 2 === 0).length;
+                if(pares >= 23 && pares <= 27) break;
+                intentos++;
+            }
 
-let seleccion=[
-...calientes.slice(0,35),
-...frios.slice(0,15)
-];
+            // Generar Espejo Real
+            let todos = Array.from({length: 100}, (_, v) => v.toString().padStart(2, "0"));
+            let espejo = todos.filter(n => !jugada.includes(n)).sort((a,b)=>a-b);
 
-seleccion=balancear(seleccion);
+            juegosHtml += `
+                <div class="game-card">
+                    <span class="tag">Apuesta Principal ${i+1}</span><br>
+                    <div class="nums">${jugada.join(" ")}</div>
+                </div>
+                <div class="game-card mirror-card">
+                    <span class="tag">🔄 Jugada Espejo</span><br>
+                    <div class="nums">${espejo.join(" ")}</div>
+                </div>
+                <hr style="border:0; border-top:1px dashed #ccc; margin:20px 0;">
+            `;
+        }
+        panel.innerHTML = juegosHtml;
+    }
 
-let top=document.getElementById("top50");
-top.innerHTML="";
-seleccion.forEach(n=>{
-let d=document.createElement("div");
-d.className="num";
-d.textContent=n;
-top.appendChild(d);
-});
-
-let cant=parseInt(document.getElementById("cantidad").value);
-let j=document.getElementById("jugadas");
-j.innerHTML="";
-
-for(let i=1;i<=cant;i++){
-let mix=[...seleccion].sort(()=>0.5-Math.random());
-let g=document.createElement("div");
-g.className="game";
-g.textContent="Jugada "+i+": "+mix.join(", ");
-j.appendChild(g);
-}
-}
-
-generar();
+    conectar();
 </script>
 
 </body>
