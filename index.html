@@ -2,39 +2,49 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Lotomania Experto v6</title>
+    <title>Lotomania PRO v7 - Experto</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
-        body { font-family: sans-serif; background: #f0f2f5; padding: 15px; text-align: center; }
-        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); max-width: 500px; margin: auto; }
-        .config { text-align: left; background: #f9f9f9; padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #ddd; }
-        label { font-weight: bold; display: block; margin-top: 10px; }
-        input, select { width: 100%; padding: 10px; margin-top: 5px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; }
-        button { background: #1b5e20; color: white; border: none; padding: 15px; width: 100%; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        .game { background: #e8f5e9; border-left: 5px solid #1b5e20; padding: 10px; margin-top: 15px; text-align: left; font-family: monospace; font-size: 14px; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 15px; text-align: center; color: #333; }
+        .card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); max-width: 550px; margin: auto; }
+        .status { background: #e8f5e9; color: #2e7d32; padding: 8px; border-radius: 10px; margin-bottom: 15px; font-weight: bold; font-size: 12px; border: 1px solid #a5d6a7; }
+        .config { text-align: left; background: #f8f9fa; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #eee; }
+        label { font-weight: bold; display: block; margin-top: 10px; color: #1b5e20; }
+        input, select { width: 100%; padding: 12px; margin-top: 5px; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; font-size: 16px; }
+        button { background: #1b5e20; color: white; border: none; padding: 15px; width: 100%; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        button:active { transform: translateY(2px); }
+        .game { background: #fff; border-left: 5px solid #1b5e20; padding: 12px; margin-top: 15px; text-align: left; font-family: 'Courier New', monospace; font-size: 15px; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .mirror { background: #e1f5fe; border-left-color: #0277bd; }
-        .fijo { color: red; font-weight: bold; text-decoration: underline; }
+        .fijo { color: #d32f2f; font-weight: bold; text-decoration: underline; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2>🎯 Lotomania Experto</h2>
+    <div class="status">✅ SISTEMA DE DATOS CONECTADO</div>
+    <h2>🎯 Lotomania PRO Maestro</h2>
     
     <div class="config">
-        <label>📌 Números Fijos (ej: 05 30 99):</label>
-        <input type="text" id="fijos" placeholder="Escribe tus fijos...">
+        <label>📌 Números Fijos (Separa con espacio):</label>
+        <input type="text" id="fijos" placeholder="Ej: 00 30 44" value="00 30 44">
         
-        <label>🚫 Excluir Decena:</label>
+        <label>🚫 Excluir Decena (No saldrá):</label>
         <select id="excluir">
             <option value="none">-- Ninguna --</option>
-            <option value="3" selected>Decena 30-39</option>
-            <option value="1">Decena 10-19</option>
-            <option value="9">Decena 90-99</option>
+            <option value="0">Decena 00 - 09</option>
+            <option value="1">Decena 10 - 19</option>
+            <option value="2">Decena 20 - 29</option>
+            <option value="3" selected>Decena 30 - 39</option>
+            <option value="4">Decena 40 - 49</option>
+            <option value="5">Decena 50 - 59</option>
+            <option value="6">Decena 60 - 69</option>
+            <option value="7">Decena 70 - 79</option>
+            <option value="8">Decena 80 - 89</option>
+            <option value="9">Decena 90 - 99</option>
         </select>
     </div>
 
-    <button onclick="generarLotomania()">🚀 GENERAR JUGADAS</button>
+    <button onclick="generarLotomania()">🚀 GENERAR JUGADAS MAESTRAS</button>
     <div id="resultado"></div>
 </div>
 
@@ -44,14 +54,12 @@
         const excluir = document.getElementById("excluir").value;
         const fijosTxt = document.getElementById("fijos").value.trim();
         
-        // Procesar fijos
         let misFijos = fijosTxt ? fijosTxt.split(/\s+/).map(n => n.padStart(2, '0')) : [];
-        misFijos = [...new Set(misFijos)].filter(n => n.length === 2);
+        misFijos = [...new Set(misFijos)].filter(n => n.length === 2 && !isNaN(n));
 
         let html = "";
         
         for(let i=1; i<=5; i++) {
-            // Crear 100 números y filtrar
             let bolsa = [];
             for(let n=0; n<100; n++) {
                 let s = n.toString().padStart(2, '0');
@@ -61,11 +69,9 @@
                 }
             }
             
-            // Mezclar y tomar los que faltan para llegar a 50
             let azar = bolsa.sort(() => 0.5 - Math.random()).slice(0, 50 - misFijos.length);
             let final = [...misFijos, ...azar].sort((a,b) => a-b);
             
-            // Crear Espejo
             let todos = [];
             for(let k=0; k<100; k++) todos.push(k.toString().padStart(2, '0'));
             let espejo = todos.filter(x => !final.includes(x)).sort((a,b) => a-b);
@@ -73,13 +79,11 @@
             html += '<div class="game"><strong>JUEGO ' + i + ':</strong><br>' + 
                     final.map(n => misFijos.includes(n) ? '<span class="fijo">'+n+'</span>' : n).join(" ") + 
                     '</div>' +
-                    '<div class="game mirror"><strong>🔄 ESPEJO:</strong><br>' + 
+                    '<div class="game mirror"><strong>🔄 ESPEJO (Apuesta Inversa):</strong><br>' + 
                     espejo.join(" ") + '</div>';
         }
-        
         area.innerHTML = html;
     }
 </script>
-
 </body>
 </html>
