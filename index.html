@@ -2,118 +2,108 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Lotomania PRO - Algoritmo Maestro</title>
+    <title>Lotomania PRO - Sistema de Anclaje</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         :root { --p: #1b5e20; --s: #0277bd; --bg: #f0f2f5; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 20px; color: #333; }
-        .card { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); max-width: 650px; margin: auto; }
-        .status { padding: 10px; border-radius: 10px; margin-bottom: 20px; font-weight: bold; font-size: 13px; transition: 0.5s; }
-        .loading { background: #fff3e0; color: #e65100; border: 1px solid #ffcc80; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 15px; }
+        .card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); max-width: 650px; margin: auto; text-align: center; }
+        .status { padding: 8px; border-radius: 10px; margin-bottom: 15px; font-weight: bold; font-size: 12px; }
         .ready { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
-        .tool-box { background: #f8f9fa; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #eee; text-align: left; }
-        label { display: block; font-weight: bold; margin-bottom: 5px; color: #1b5e20; }
-        select, button { width: 100%; padding: 14px; border-radius: 10px; font-size: 16px; margin-bottom: 10px; }
-        button { background: var(--p); color: white; border: none; cursor: pointer; font-weight: bold; transition: 0.2s; }
-        button:hover { background: #2e7d32; transform: scale(1.01); }
-        .game-box { background: #fff; border-left: 6px solid var(--p); padding: 15px; margin-top: 15px; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); text-align: left; }
-        .mirror { border-left-color: var(--s); background: #e1f5fe; margin-top: 5px; }
-        .nums { font-family: 'Courier New', monospace; font-size: 16px; font-weight: bold; letter-spacing: 1px; line-height: 1.5; }
-        .header-game { font-size: 12px; font-weight: bold; text-transform: uppercase; color: #666; margin-bottom: 5px; display: block; }
+        .tool-box { background: #f8f9fa; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #eee; text-align: left; }
+        label { font-weight: bold; color: var(--p); display: block; margin-bottom: 5px; }
+        input, select, button { width: 100%; padding: 12px; border-radius: 10px; font-size: 16px; margin-bottom: 10px; border: 1px solid #ccc; box-sizing: border-box; }
+        button { background: var(--p); color: white; border: none; cursor: pointer; font-weight: bold; }
+        .game-box { background: #fff; border-left: 6px solid var(--p); padding: 12px; margin-top: 10px; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); text-align: left; }
+        .mirror { border-left-color: var(--s); background: #e1f5fe; }
+        .nums { font-family: 'Courier New', monospace; font-size: 15px; font-weight: bold; line-height: 1.4; color: #333; }
+        .fijo { color: #d32f2f; text-decoration: underline; } /* Resalta los números fijos */
     </style>
 </head>
 <body>
 
 <div class="card">
     <h1>🎯 Lotomania PRO</h1>
-    <div id="status" class="status loading">⏳ Estableciendo conexión segura...</div>
+    <div id="status" class="status ready">✅ SISTEMA LISTO (Modo Híbrido)</div>
 
     <div class="tool-box">
-        <label>🚫 Exclusión de Decena (Análisis Experto):</label>
+        <label>📌 Números Fijos (Separa con espacio, ej: 05 30 99):</label>
+        <input type="text" id="fijos" placeholder="Escribe hasta 5 números...">
+        
+        <label>🚫 Excluir Decena:</label>
         <select id="excluir">
-            <option value="none">-- No excluir ninguna --</option>
-            <option value="3" selected>Decena 30 - 39 (Recomendada)</option>
-            <option value="0">Decena 00 - 09</option>
+            <option value="none">-- Ninguna --</option>
+            <option value="3" selected>Decena 30 - 39</option>
             <option value="1">Decena 10 - 19</option>
-            <option value="8">Decena 80 - 89</option>
             <option value="9">Decena 90 - 99</option>
         </select>
-        <small style="color:#666">Basado en tu Excel, la decena 30 está en fase de descanso.</small>
     </div>
 
-    <button onclick="ejecutarSistema()">🚀 GENERAR PRONÓSTICO MAESTRO</button>
+    <button onclick="generarConFijos()">🚀 GENERAR JUGADAS MAESTRAS</button>
     <div id="resultados"></div>
 </div>
 
 <script>
-    const URL_API = "https://script.google.com/macros/s/AKfycbw_DcvzhW2VC5fZeSluOM-zk-bfaFO8ZAdc6gCtEaZkjA1iWAQb0FLfjWh97tTl-yKnGg/exec";
-    let db_data = [];
-
-    async function conectar() {
-        const st = document.getElementById("status");
-        try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 3500); // 3.5 segundos de espera max
-            const res = await fetch(URL_API, { signal: controller.signal });
-            db_data = await res.json();
-            st.className = "status ready";
-            st.textContent = "✅ CONECTADO: Datos en la nube sincronizados";
-        } catch (e) {
-            st.className = "status ready";
-            st.textContent = "✅ MODO LOCAL: Filtros cargados (Evitando bloqueo)";
-            console.log("Usando motor de respaldo por demora de red.");
-        }
-    }
-
-    function ejecutarSistema() {
+    function generarConFijos() {
         const resDiv = document.getElementById("resultados");
         const exc = document.getElementById("excluir").value;
-        resDiv.innerHTML = "<p>Aplicando leyes de probabilidad...</p>";
+        const fijosInput = document.getElementById("fijos").value.trim();
+        
+        // Convertir fijos en array limpio
+        let numFijos = fijosInput ? fijosInput.split(/\s+/).map(n => n.padStart(2, "0")) : [];
+        numFijos = [...new Set(numFijos)].slice(0, 10); // Máximo 10 para no romper la lógica
 
-        // 1. Construir Universo (8 números centrales por decena)
+        resDiv.innerHTML = "Calculando con números anclados...";
+
+        // 1. Construir Universo (8 centrales) excluyendo la decena elegida
         let universo = [];
         for(let d=0; d<10; d++) {
             if(d.toString() === exc) continue;
-            for(let n=2; n<=9; n++) universo.push((d*10 + n).toString().padStart(2, "0"));
+            for(let n=2; n<=9; n++) {
+                let s = (d*10 + n).toString().padStart(2, "0");
+                if(!numFijos.includes(s)) universo.push(s);
+            }
         }
 
-        // 2. Rellenar con números terminados en 0 y 1 para completar 80 base
+        // Añadir terminados en 0 y 1 (relleno estratégico)
         for(let i=0; i<100; i+=10) {
             if(Math.floor(i/10).toString() === exc) continue;
-            universo.push(i.toString().padStart(2,"0"));
-            universo.push((i+1).toString().padStart(2,"0"));
+            [i, i+1].forEach(n => {
+                let s = n.toString().padStart(2, "0");
+                if(!numFijos.includes(s) && !universo.includes(s)) universo.push(s);
+            });
         }
 
         let html = "";
         for(let i=1; i<=5; i++) {
-            // Generar jugada balanceada (23-27 pares)
+            // Generar 50 números incluyendo los fijos obligatoriamente
             let jugada;
-            let p = 0;
+            let intentos = 0;
             do {
-                jugada = universo.sort(() => 0.5 - Math.random()).slice(0, 50).sort((a,b)=>a-b);
-                p = jugada.filter(n => parseInt(n) % 2 === 0).length;
-            } while (p < 23 || p > 27);
+                let azar = universo.sort(() => 0.5 - Math.random()).slice(0, 50 - numFijos.length);
+                jugada = [...numFijos, ...azar].sort((a,b) => a-b);
+                let pares = jugada.filter(n => parseInt(n) % 2 === 0).length;
+                if(pares >= 23 && pares <= 27) break;
+                intentos++;
+            } while (intentos < 500);
 
-            // Generar Espejo
+            // Espejo
             let todos = Array.from({length: 100}, (_, v) => v.toString().padStart(2, "0"));
             let espejo = todos.filter(n => !jugada.includes(n)).sort((a,b)=>a-b);
 
             html += `
                 <div class="game-box">
-                    <span class="header-game">Jugada Principal ${i}</span>
-                    <div class="nums">${jugada.join(" ")}</div>
+                    <strong>Juego Principal ${i}</strong><br>
+                    <div class="nums">${jugada.map(n => numFijos.includes(n) ? <span class="fijo">${n}</span> : n).join(" ")}</div>
                 </div>
                 <div class="game-box mirror">
-                    <span class="header-game">🔄 Apuesta Espejo (Recomendada)</span>
+                    <strong>🔄 Espejo ${i}</strong><br>
                     <div class="nums">${espejo.join(" ")}</div>
                 </div>
-                <div style="height:15px"></div>
             `;
         }
         resDiv.innerHTML = html;
     }
-
-    conectar();
 </script>
 </body>
 </html>
