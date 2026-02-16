@@ -2,33 +2,32 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Lotomania PRO - Sistema de Anclaje</title>
+    <title>Lotomania PRO - Final Fix</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         :root { --p: #1b5e20; --s: #0277bd; --bg: #f0f2f5; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 15px; }
-        .card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); max-width: 650px; margin: auto; text-align: center; }
-        .status { padding: 8px; border-radius: 10px; margin-bottom: 15px; font-weight: bold; font-size: 12px; }
-        .ready { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 15px; text-align: center; }
+        .card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); max-width: 600px; margin: auto; }
         .tool-box { background: #f8f9fa; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #eee; text-align: left; }
         label { font-weight: bold; color: var(--p); display: block; margin-bottom: 5px; }
         input, select, button { width: 100%; padding: 12px; border-radius: 10px; font-size: 16px; margin-bottom: 10px; border: 1px solid #ccc; box-sizing: border-box; }
-        button { background: var(--p); color: white; border: none; cursor: pointer; font-weight: bold; }
+        button { background: var(--p); color: white; border: none; cursor: pointer; font-weight: bold; font-size: 18px; }
+        button:active { transform: scale(0.98); }
         .game-box { background: #fff; border-left: 6px solid var(--p); padding: 12px; margin-top: 10px; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); text-align: left; }
         .mirror { border-left-color: var(--s); background: #e1f5fe; }
-        .nums { font-family: 'Courier New', monospace; font-size: 15px; font-weight: bold; line-height: 1.4; color: #333; }
-        .fijo { color: #d32f2f; text-decoration: underline; } /* Resalta los números fijos */
+        .nums { font-family: 'Courier New', monospace; font-size: 15px; font-weight: bold; color: #333; word-break: break-all; }
+        .fijo { color: #d32f2f; text-decoration: underline; font-size: 17px; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h1>🎯 Lotomania PRO</h1>
-    <div id="status" class="status ready">✅ SISTEMA LISTO (Modo Híbrido)</div>
+    <h1>🎯 Lotomania PRO v.4</h1>
+    <div style="background:#e8f5e9; color:#2e7d32; padding:8px; border-radius:8px; margin-bottom:15px; font-weight:bold; font-size:12px;">✅ SISTEMA ACTIVADO Y CORREGIDO</div>
 
     <div class="tool-box">
-        <label>📌 Números Fijos (Separa con espacio, ej: 05 30 99):</label>
-        <input type="text" id="fijos" placeholder="Escribe hasta 5 números...">
+        <label>📌 Números Fijos (ej: 05 30 99):</label>
+        <input type="text" id="fijos" placeholder="Escribe tus números...">
         
         <label>🚫 Excluir Decena:</label>
         <select id="excluir">
@@ -39,71 +38,56 @@
         </select>
     </div>
 
-    <button onclick="generarConFijos()">🚀 GENERAR JUGADAS MAESTRAS</button>
+    <button id="btnGenerar">🚀 GENERAR JUGADAS MAESTRAS</button>
     <div id="resultados"></div>
 </div>
 
 <script>
-    function generarConFijos() {
+    document.getElementById('btnGenerar').addEventListener('click', function() {
         const resDiv = document.getElementById("resultados");
         const exc = document.getElementById("excluir").value;
         const fijosInput = document.getElementById("fijos").value.trim();
         
-        // Convertir fijos en array limpio
-        let numFijos = fijosInput ? fijosInput.split(/\s+/).map(n => n.padStart(2, "0")) : [];
-        numFijos = [...new Set(numFijos)].slice(0, 10); // Máximo 10 para no romper la lógica
+        // 1. Procesar Números Fijos
+        let numFijos = fijosInput ? fijosInput.split(/\s+/).map(n => n.padStart(2, "0").slice(-2)) : [];
+        numFijos = [...new Set(numFijos)].filter(n => !isNaN(n) && n !== "");
 
-        resDiv.innerHTML = "Calculando con números anclados...";
+        resDiv.innerHTML = "<p>Aplicando algoritmos...</p>";
 
-        // 1. Construir Universo (8 centrales) excluyendo la decena elegida
+        // 2. Crear Universo de números (excluyendo la decena)
         let universo = [];
-        for(let d=0; d<10; d++) {
-            if(d.toString() === exc) continue;
-            for(let n=2; n<=9; n++) {
-                let s = (d*10 + n).toString().padStart(2, "0");
-                if(!numFijos.includes(s)) universo.push(s);
+        for(let i=0; i<100; i++) {
+            let s = i.toString().padStart(2, "0");
+            let decena = Math.floor(i/10).toString();
+            if(decena !== exc && !numFijos.includes(s)) {
+                universo.push(s);
             }
         }
 
-        // Añadir terminados en 0 y 1 (relleno estratégico)
-        for(let i=0; i<100; i+=10) {
-            if(Math.floor(i/10).toString() === exc) continue;
-            [i, i+1].forEach(n => {
-                let s = n.toString().padStart(2, "0");
-                if(!numFijos.includes(s) && !universo.includes(s)) universo.push(s);
-            });
-        }
-
         let html = "";
-        for(let i=1; i<=5; i++) {
-            // Generar 50 números incluyendo los fijos obligatoriamente
-            let jugada;
-            let intentos = 0;
-            do {
-                let azar = universo.sort(() => 0.5 - Math.random()).slice(0, 50 - numFijos.length);
-                jugada = [...numFijos, ...azar].sort((a,b) => a-b);
-                let pares = jugada.filter(n => parseInt(n) % 2 === 0).length;
-                if(pares >= 23 && pares <= 27) break;
-                intentos++;
-            } while (intentos < 500);
-
-            // Espejo
+        for(let j=1; j<=5; j++) {
+            // Mezclar universo y tomar los necesarios para completar 50
+            let azar = universo.sort(() => 0.5 - Math.random()).slice(0, 50 - numFijos.length);
+            let jugada = [...numFijos, ...azar].sort((a,b) => a-b);
+            
+            // Crear Espejo
             let todos = Array.from({length: 100}, (_, v) => v.toString().padStart(2, "0"));
             let espejo = todos.filter(n => !jugada.includes(n)).sort((a,b)=>a-b);
 
             html += `
                 <div class="game-box">
-                    <strong>Juego Principal ${i}</strong><br>
+                    <strong>Juego Principal ${j}</strong><br>
                     <div class="nums">${jugada.map(n => numFijos.includes(n) ? <span class="fijo">${n}</span> : n).join(" ")}</div>
                 </div>
                 <div class="game-box mirror">
-                    <strong>🔄 Espejo ${i}</strong><br>
+                    <strong>🔄 Espejo ${j}</strong><br>
                     <div class="nums">${espejo.join(" ")}</div>
                 </div>
+                <hr style="border:0.5px dashed #ccc; margin:15px 0;">
             `;
         }
         resDiv.innerHTML = html;
-    }
+    });
 </script>
 </body>
 </html>
