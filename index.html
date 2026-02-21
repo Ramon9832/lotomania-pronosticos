@@ -2,160 +2,162 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Lotomanía – Sistema Profesional Máximo</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#111">
+<title>Lotomanía – Sistema Profesional Avanzado</title>
 
 <style>
-body{font-family:Arial;background:#f2f2f2;padding:15px}
-h2,h3{margin-top:0}
-textarea{width:100%}
-button{padding:10px;margin-top:8px;font-size:15px}
-.box{background:#fff;padding:12px;margin-top:15px;border-radius:6px}
-.nums{font-family:monospace;line-height:1.6}
-.estado{font-weight:bold}
+body { font-family: Arial, sans-serif; background:#eef2f5; padding:20px }
+.card { background:#fff; padding:15px; margin-bottom:15px; border-radius:6px }
+button { padding:10px 14px; margin:5px; font-size:14px }
+.resultado { font-weight:bold; line-height:1.6 }
+.ok { color:green }
+.error { color:red }
+hr { margin:10px 0 }
 </style>
 </head>
 
 <body>
 
-<h2>🎯 Lotomanía – Sistema Profesional Máximo</h2>
+<h2>🎯 Lotomanía – Sistema Profesional Avanzado</h2>
 
-<div class="box">
-<h3>1️⃣ Ingresar sorteos históricos</h3>
-<textarea id="sorteos" rows="5"
-placeholder="Cada línea = un sorteo (50 números separados por coma)"></textarea>
-<button onclick="procesar()">Generar jugadas</button>
+<div class="card">
+  <h3>Histórico</h3>
+  <textarea id="historico" rows="8" style="width:100%"
+    placeholder="Cada línea = 1 sorteo (20 números)">
+  </textarea><br><br>
+
+  <!-- BOTONES EXISTENTES -->
+  <button onclick="validar()">Validar histórico</button>
+  <button onclick="generarModelo()">Modelo 50</button>
+
+  <!-- BOTONES NUEVOS -->
+  <button onclick="generarJuegos()">Juegos A / B / C</button>
+  <button onclick="limpiar()">Limpiar</button>
 </div>
 
-<div class="box">
-<h3>🔒 Núcleo Profesional</h3>
-<div id="nucleo" class="nums"></div>
+<div class="card">
+  <h3>Validación</h3>
+  <div id="outValidacion" class="resultado"></div>
 </div>
 
-<div class="box">
-<h3>🅰️ Juego A (Tendencia)</h3>
-<div id="juegoA" class="nums"></div>
+<div class="card">
+  <h3>Modelo profesional – 50 números</h3>
+  <div id="outModelo" class="resultado"></div>
 </div>
 
-<div class="box">
-<h3>🅱️ Juego B (Retorno)</h3>
-<div id="juegoB" class="nums"></div>
-</div>
-
-<div class="box">
-<h3>2️⃣ Ingresar resultado del sorteo</h3>
-<textarea id="resultado" rows="3"
-placeholder="Resultado oficial (50 números separados por coma)"></textarea>
-<button onclick="evaluar()">Evaluar sistema</button>
-</div>
-
-<div class="box">
-<h3>📊 Estado del sistema</h3>
-<div id="analisis"></div>
+<div class="card">
+  <h3>Juegos finales</h3>
+  <div id="outJuegos" class="resultado"></div>
 </div>
 
 <script>
-// =================== CONFIGURACIÓN ===================
-const LIMITE_AJUSTE = 0.3;
-const BASE_NUCLEO = [
-2,5,11,14,18,21,24,27,32,35,
-38,41,44,49,52,55,60,65,72,77,84,88
-];
+let sorteosValidos = [];
+let modelo50 = [];
 
-// =================== UTILIDADES ===================
-function fmt(arr){
- return arr.sort((a,b)=>a-b).map(n=>String(n).padStart(2,"0")).join(" – ");
-}
-function getLS(k,v){ return JSON.parse(localStorage.getItem(k))||v }
-function setLS(k,v){ localStorage.setItem(k,JSON.stringify(v)) }
-
-// =================== PROCESAR ===================
-function procesar(){
- const texto=document.getElementById("sorteos").value.trim();
- if(!texto)return alert("Ingrese sorteos");
-
- const sorteos=texto.split("\n").map(l=>l.split(",").map(n=>+n));
- const freq={};
-
- sorteos.flat().forEach(n=>freq[n]=(freq[n]||0)+1);
-
- let nucleo=getLS("nucleo",BASE_NUCLEO);
-
- const disponibles=Object.keys(freq).map(Number).filter(n=>!nucleo.includes(n));
- disponibles.sort((a,b)=>freq[b]-freq[a]);
-
- const juegoA=nucleo.concat(disponibles.slice(0,50-nucleo.length));
- const juegoB=nucleo.concat(disponibles.slice(-(50-nucleo.length)));
-
- document.getElementById("nucleo").innerText=fmt(nucleo);
- document.getElementById("juegoA").innerText=fmt(juegoA);
- document.getElementById("juegoB").innerText=fmt(juegoB);
+function leer() {
+  return document.getElementById("historico").value
+    .trim().split("\n")
+    .map(l => l.trim().split(/[\s,]+/).map(n => parseInt(n,10)));
 }
 
-// =================== EVALUAR ===================
-function evaluar(){
- const res=document.getElementById("resultado").value
- .split(",").map(n=>+n);
+/* ================= VALIDACIÓN ================= */
+function validar() {
+  sorteosValidos = [];
+  let errores = [];
 
- let nucleo=getLS("nucleo",BASE_NUCLEO);
- let historial=getLS("historial",[]);
+  leer().forEach((s,i) => {
+    const u = new Set(s);
+    if (
+      s.length !== 20 ||
+      u.size !== 20 ||
+      s.some(n => isNaN(n) || n < 0 || n > 99)
+    ) {
+      errores.push(❌ Sorteo ${i+1} inválido);
+    } else {
+      sorteosValidos.push(s);
+    }
+  });
 
- const aciertos=nucleo.filter(n=>res.includes(n)).length;
-
- historial.push({fecha:new Date().toLocaleDateString(),aciertos});
- setLS("historial",historial);
-
- let estado="🟢 SISTEMA SANO";
- if(aciertos>=12)estado="🔥 SISTEMA EN ALTA";
- if(aciertos<8)estado="🔴 ALERTA";
-
- if(historial.length>=2){
-   const ult=historial.slice(-2);
-   if(ult.every(h=>h.aciertos<8)){
-     nucleo=ajustarNucleo(nucleo,historial);
-     setLS("nucleo",nucleo);
-     estado+=" – NÚCLEO AJUSTADO";
-   }
- }
-
- document.getElementById("analisis").innerHTML=
- `Aciertos del núcleo: <b>${aciertos}</b><br>
- Estado: <span class="estado">${estado}</span><br>
- Sorteos analizados: ${historial.length}`;
+  const out = document.getElementById("outValidacion");
+  if (!sorteosValidos.length) {
+    out.innerHTML = errores.join("<br>");
+    out.className = "resultado error";
+  } else {
+    out.innerHTML = ✔ Sorteos válidos: ${sorteosValidos.length};
+    out.className = "resultado ok";
+  }
 }
 
-// =================== AJUSTE AUTOMÁTICO ===================
-function ajustarNucleo(nucleo,hist){
- const freq={};
- hist.forEach(h=>{
-  (h.resultado||[]).forEach(n=>freq[n]=(freq[n]||0)+1)
- });
+/* ================= MODELO 50 AVANZADO ================= */
+function generarModelo() {
+  if (!sorteosValidos.length) {
+    alert("Valida el histórico primero");
+    return;
+  }
 
- const quitar=Math.floor(nucleo.length*LIMITE_AJUSTE);
- const perdedores=[...nucleo]
- .sort((a,b)=>(freq[a]||0)-(freq[b]||0))
- .slice(0,quitar);
+  let peso = sorteosValidos.map((_,i) => i+1);
+  let freq = Array(100).fill(0);
 
- const candidatos=Object.keys(freq).map(Number)
- .filter(n=>!nucleo.includes(n))
- .sort((a,b)=>freq[b]-freq[a])
- .slice(0,quitar);
+  sorteosValidos.forEach((s,i) =>
+    s.forEach(n => freq[n] += peso[i])
+  );
 
- return nucleo.filter(n=>!perdedores.includes(n)).concat(candidatos);
+  let ranking = freq
+    .map((f,n)=>({n,f}))
+    .sort((a,b)=>b.f-a.f);
+
+  modelo50 = [];
+  let dec = Array(10).fill(0);
+  let pares = 0, impares = 0;
+
+  for (let r of ranking) {
+    let d = Math.floor(r.n/10);
+    let esPar = r.n % 2 === 0;
+
+    if (
+      dec[d] < 5 &&
+      pares < 25 && impares < 25 &&
+      r.f > 0
+    ) {
+      modelo50.push(r.n);
+      dec[d]++;
+      esPar ? pares++ : impares++;
+    }
+    if (modelo50.length === 50) break;
+  }
+
+  modelo50.sort((a,b)=>a-b);
+  document.getElementById("outModelo").innerHTML = fmt(modelo50);
 }
 
-// =================== PWA ===================
-if("serviceWorker"in navigator){
- const swCode=`
- self.addEventListener("install",e=>{
- e.waitUntil(caches.open("lotomania").then(c=>c.addAll(["./"])))
- });
- self.addEventListener("fetch",e=>{
- e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request)))
- });`;
- const blob=new Blob([swCode],{type:"text/javascript"});
- navigator.serviceWorker.register(URL.createObjectURL(blob));
+/* ================= JUEGOS OPTIMIZADOS ================= */
+function generarJuegos() {
+  if (modelo50.length !== 50) {
+    alert("Genera primero el modelo 50");
+    return;
+  }
+
+  let calientes = modelo50.slice(0,25);
+  let frios = modelo50.slice(25);
+
+  let A = calientes.slice(0,20);
+  let B = frios.slice(0,20);
+  let C = calientes.slice(10,20).concat(frios.slice(10,20));
+
+  document.getElementById("outJuegos").innerHTML =
+    <strong>Juego A (tendencia)</strong><br>${fmt(A)}<hr> +
+    <strong>Juego B (retorno)</strong><br>${fmt(B)}<hr> +
+    <strong>Juego C (ruptura)</strong><br>${fmt(C)};
+}
+
+/* ================= UTIL ================= */
+function fmt(a){ return a.map(n=>n.toString().padStart(2,"0")).join(" - ") }
+
+function limpiar() {
+  document.getElementById("historico").value="";
+  document.getElementById("outValidacion").innerHTML="";
+  document.getElementById("outModelo").innerHTML="";
+  document.getElementById("outJuegos").innerHTML="";
+  sorteosValidos=[]; modelo50=[];
 }
 </script>
 
