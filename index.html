@@ -1,89 +1,163 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Lotomania PRO v7 - Experto</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 15px; text-align: center; color: #333; }
-        .card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); max-width: 550px; margin: auto; }
-        .status { background: #e8f5e9; color: #2e7d32; padding: 8px; border-radius: 10px; margin-bottom: 15px; font-weight: bold; font-size: 12px; border: 1px solid #a5d6a7; }
-        .config { text-align: left; background: #f8f9fa; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #eee; }
-        label { font-weight: bold; display: block; margin-top: 10px; color: #1b5e20; }
-        input, select { width: 100%; padding: 12px; margin-top: 5px; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; font-size: 16px; }
-        button { background: #1b5e20; color: white; border: none; padding: 15px; width: 100%; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        button:active { transform: translateY(2px); }
-        .game { background: #fff; border-left: 5px solid #1b5e20; padding: 12px; margin-top: 15px; text-align: left; font-family: 'Courier New', monospace; font-size: 15px; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .mirror { background: #e1f5fe; border-left-color: #0277bd; }
-        .fijo { color: #d32f2f; font-weight: bold; text-decoration: underline; }
-    </style>
+<meta charset="UTF-8">
+<title>Lotomanía – Sistema Profesional Máximo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#111">
+
+<style>
+body{font-family:Arial;background:#f2f2f2;padding:15px}
+h2,h3{margin-top:0}
+textarea{width:100%}
+button{padding:10px;margin-top:8px;font-size:15px}
+.box{background:#fff;padding:12px;margin-top:15px;border-radius:6px}
+.nums{font-family:monospace;line-height:1.6}
+.estado{font-weight:bold}
+</style>
 </head>
+
 <body>
 
-<div class="card">
-    <div class="status">✅ SISTEMA DE DATOS CONECTADO</div>
-    <h2>🎯 Lotomania PRO Maestro</h2>
-    
-    <div class="config">
-        <label>📌 Números Fijos (Separa con espacio):</label>
-        <input type="text" id="fijos" placeholder="Ej: 00 30 44" value="00 30 44">
-        
-        <label>🚫 Excluir Decena (No saldrá):</label>
-        <select id="excluir">
-            <option value="none">-- Ninguna --</option>
-            <option value="0">Decena 00 - 09</option>
-            <option value="1">Decena 10 - 19</option>
-            <option value="2">Decena 20 - 29</option>
-            <option value="3" selected>Decena 30 - 39</option>
-            <option value="4">Decena 40 - 49</option>
-            <option value="5">Decena 50 - 59</option>
-            <option value="6">Decena 60 - 69</option>
-            <option value="7">Decena 70 - 79</option>
-            <option value="8">Decena 80 - 89</option>
-            <option value="9">Decena 90 - 99</option>
-        </select>
-    </div>
+<h2>🎯 Lotomanía – Sistema Profesional Máximo</h2>
 
-    <button onclick="generarLotomania()">🚀 GENERAR JUGADAS MAESTRAS</button>
-    <div id="resultado"></div>
+<div class="box">
+<h3>1️⃣ Ingresar sorteos históricos</h3>
+<textarea id="sorteos" rows="5"
+placeholder="Cada línea = un sorteo (50 números separados por coma)"></textarea>
+<button onclick="procesar()">Generar jugadas</button>
+</div>
+
+<div class="box">
+<h3>🔒 Núcleo Profesional</h3>
+<div id="nucleo" class="nums"></div>
+</div>
+
+<div class="box">
+<h3>🅰️ Juego A (Tendencia)</h3>
+<div id="juegoA" class="nums"></div>
+</div>
+
+<div class="box">
+<h3>🅱️ Juego B (Retorno)</h3>
+<div id="juegoB" class="nums"></div>
+</div>
+
+<div class="box">
+<h3>2️⃣ Ingresar resultado del sorteo</h3>
+<textarea id="resultado" rows="3"
+placeholder="Resultado oficial (50 números separados por coma)"></textarea>
+<button onclick="evaluar()">Evaluar sistema</button>
+</div>
+
+<div class="box">
+<h3>📊 Estado del sistema</h3>
+<div id="analisis"></div>
 </div>
 
 <script>
-    function generarLotomania() {
-        const area = document.getElementById("resultado");
-        const excluir = document.getElementById("excluir").value;
-        const fijosTxt = document.getElementById("fijos").value.trim();
-        
-        let misFijos = fijosTxt ? fijosTxt.split(/\s+/).map(n => n.padStart(2, '0')) : [];
-        misFijos = [...new Set(misFijos)].filter(n => n.length === 2 && !isNaN(n));
+// =================== CONFIGURACIÓN ===================
+const LIMITE_AJUSTE = 0.3;
+const BASE_NUCLEO = [
+2,5,11,14,18,21,24,27,32,35,
+38,41,44,49,52,55,60,65,72,77,84,88
+];
 
-        let html = "";
-        
-        for(let i=1; i<=5; i++) {
-            let bolsa = [];
-            for(let n=0; n<100; n++) {
-                let s = n.toString().padStart(2, '0');
-                let dec = Math.floor(n/10).toString();
-                if(dec !== excluir && !misFijos.includes(s)) {
-                    bolsa.push(s);
-                }
-            }
-            
-            let azar = bolsa.sort(() => 0.5 - Math.random()).slice(0, 50 - misFijos.length);
-            let final = [...misFijos, ...azar].sort((a,b) => a-b);
-            
-            let todos = [];
-            for(let k=0; k<100; k++) todos.push(k.toString().padStart(2, '0'));
-            let espejo = todos.filter(x => !final.includes(x)).sort((a,b) => a-b);
-            
-            html += '<div class="game"><strong>JUEGO ' + i + ':</strong><br>' + 
-                    final.map(n => misFijos.includes(n) ? '<span class="fijo">'+n+'</span>' : n).join(" ") + 
-                    '</div>' +
-                    '<div class="game mirror"><strong>🔄 ESPEJO (Apuesta Inversa):</strong><br>' + 
-                    espejo.join(" ") + '</div>';
-        }
-        area.innerHTML = html;
-    }
+// =================== UTILIDADES ===================
+function fmt(arr){
+ return arr.sort((a,b)=>a-b).map(n=>String(n).padStart(2,"0")).join(" – ");
+}
+function getLS(k,v){ return JSON.parse(localStorage.getItem(k))||v }
+function setLS(k,v){ localStorage.setItem(k,JSON.stringify(v)) }
+
+// =================== PROCESAR ===================
+function procesar(){
+ const texto=document.getElementById("sorteos").value.trim();
+ if(!texto)return alert("Ingrese sorteos");
+
+ const sorteos=texto.split("\n").map(l=>l.split(",").map(n=>+n));
+ const freq={};
+
+ sorteos.flat().forEach(n=>freq[n]=(freq[n]||0)+1);
+
+ let nucleo=getLS("nucleo",BASE_NUCLEO);
+
+ const disponibles=Object.keys(freq).map(Number).filter(n=>!nucleo.includes(n));
+ disponibles.sort((a,b)=>freq[b]-freq[a]);
+
+ const juegoA=nucleo.concat(disponibles.slice(0,50-nucleo.length));
+ const juegoB=nucleo.concat(disponibles.slice(-(50-nucleo.length)));
+
+ document.getElementById("nucleo").innerText=fmt(nucleo);
+ document.getElementById("juegoA").innerText=fmt(juegoA);
+ document.getElementById("juegoB").innerText=fmt(juegoB);
+}
+
+// =================== EVALUAR ===================
+function evaluar(){
+ const res=document.getElementById("resultado").value
+ .split(",").map(n=>+n);
+
+ let nucleo=getLS("nucleo",BASE_NUCLEO);
+ let historial=getLS("historial",[]);
+
+ const aciertos=nucleo.filter(n=>res.includes(n)).length;
+
+ historial.push({fecha:new Date().toLocaleDateString(),aciertos});
+ setLS("historial",historial);
+
+ let estado="🟢 SISTEMA SANO";
+ if(aciertos>=12)estado="🔥 SISTEMA EN ALTA";
+ if(aciertos<8)estado="🔴 ALERTA";
+
+ if(historial.length>=2){
+   const ult=historial.slice(-2);
+   if(ult.every(h=>h.aciertos<8)){
+     nucleo=ajustarNucleo(nucleo,historial);
+     setLS("nucleo",nucleo);
+     estado+=" – NÚCLEO AJUSTADO";
+   }
+ }
+
+ document.getElementById("analisis").innerHTML=
+ `Aciertos del núcleo: <b>${aciertos}</b><br>
+ Estado: <span class="estado">${estado}</span><br>
+ Sorteos analizados: ${historial.length}`;
+}
+
+// =================== AJUSTE AUTOMÁTICO ===================
+function ajustarNucleo(nucleo,hist){
+ const freq={};
+ hist.forEach(h=>{
+  (h.resultado||[]).forEach(n=>freq[n]=(freq[n]||0)+1)
+ });
+
+ const quitar=Math.floor(nucleo.length*LIMITE_AJUSTE);
+ const perdedores=[...nucleo]
+ .sort((a,b)=>(freq[a]||0)-(freq[b]||0))
+ .slice(0,quitar);
+
+ const candidatos=Object.keys(freq).map(Number)
+ .filter(n=>!nucleo.includes(n))
+ .sort((a,b)=>freq[b]-freq[a])
+ .slice(0,quitar);
+
+ return nucleo.filter(n=>!perdedores.includes(n)).concat(candidatos);
+}
+
+// =================== PWA ===================
+if("serviceWorker"in navigator){
+ const swCode=`
+ self.addEventListener("install",e=>{
+ e.waitUntil(caches.open("lotomania").then(c=>c.addAll(["./"])))
+ });
+ self.addEventListener("fetch",e=>{
+ e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request)))
+ });`;
+ const blob=new Blob([swCode],{type:"text/javascript"});
+ navigator.serviceWorker.register(URL.createObjectURL(blob));
+}
 </script>
+
 </body>
 </html>
